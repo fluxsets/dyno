@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/fluxsets/dyno"
 	"github.com/fluxsets/dyno/server/http"
-	"github.com/google/uuid"
 	"log"
 	gohttp "net/http"
 )
@@ -24,12 +23,7 @@ func main() {
 		}
 
 		return nil
-	}, dyno.Option{
-		ID:       uuid.NewString(),
-		Conf:     "./config/config.yaml",
-		LogLevel: "debug",
-		KWArgs:   "a=1,b=2",
-	})
+	}, dyno.BindOption())
 	err := cli.Run()
 	if err != nil {
 		log.Fatal(err)
