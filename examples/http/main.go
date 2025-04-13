@@ -10,7 +10,7 @@ import (
 
 func main() {
 	cli := dyno.NewCLI(func(ctx context.Context, do dyno.Dyno) error {
-		do.Hooks().PreStart(func(ctx context.Context) error {
+		do.Hooks().OnStart(func(ctx context.Context) error {
 			do.Logger().Info("pre start")
 			return nil
 		})

@@ -9,6 +9,7 @@ import (
 type Dyno interface {
 	Option() Option
 	Context() context.Context
+	DeployWithOptions(factory DeploymentFactory, options DeploymentOptions) error
 	Deploy(deps ...Deployment) error
 	Run() error
 	EventBus() EventBus
@@ -23,6 +24,15 @@ type dyno struct {
 	eventBus EventBus
 	hooks    *hooks
 	logger   *slog.Logger
+}
+
+func (do *dyno) DeployWithOptions(factory DeploymentFactory, options DeploymentOptions) error {
+	var deps []Deployment
+	for i := 0; i < options.Instances; i++ {
+		dep := factory()
+		deps = append(deps, dep)
+	}
+	return do.Deploy(deps...)
 }
 
 func (do *dyno) Logger(args ...any) *slog.Logger {
@@ -55,13 +65,13 @@ func (do *dyno) Deploy(deps ...Deployment) error {
 }
 
 func (do *dyno) Run() error {
-	for _, fn := range do.hooks.preStartFuncs {
+	for _, fn := range do.hooks.onStarts {
 		if err := fn(do.ctx); err != nil {
 			return err
 		}
 	}
 	err := do.runG.Run()
-	for _, fn := range do.hooks.postStopFuncs {
+	for _, fn := range do.hooks.onStops {
 		if err := fn(do.ctx); err != nil {
 			do.logger.ErrorContext(do.ctx, "post stop func called error", "error", err)
 		}
@@ -83,8 +93,8 @@ func newDyno(o Option) Dyno {
 		runG:   &run.Group{},
 		logger: slog.Default(),
 		hooks: &hooks{
-			preStartFuncs: []HookFunc{},
-			postStopFuncs: []HookFunc{},
+			onStarts: []HookFunc{},
+			onStops:  []HookFunc{},
 		},
 	}
 }

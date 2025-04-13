@@ -3,23 +3,23 @@ package dyno
 import "context"
 
 type Hooks interface {
-	PreStart(fns ...HookFunc)
-	PostStop(fns ...HookFunc)
+	OnStart(fns ...HookFunc)
+	OnStop(fns ...HookFunc)
 }
 
 type HookFunc func(ctx context.Context) error
 
 type hooks struct {
-	preStartFuncs []HookFunc
-	postStopFuncs []HookFunc
+	onStarts []HookFunc
+	onStops  []HookFunc
 }
 
-func (hooks *hooks) PreStart(fns ...HookFunc) {
-	hooks.preStartFuncs = append(hooks.preStartFuncs, fns...)
+func (hooks *hooks) OnStart(fns ...HookFunc) {
+	hooks.onStarts = append(hooks.onStarts, fns...)
 }
 
-func (hooks *hooks) PostStop(fns ...HookFunc) {
-	hooks.postStopFuncs = append(hooks.postStopFuncs, fns...)
+func (hooks *hooks) OnStop(fns ...HookFunc) {
+	hooks.onStops = append(hooks.onStops, fns...)
 }
 
 var _ Hooks = new(hooks)
