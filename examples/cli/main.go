@@ -47,7 +47,7 @@ func main() {
 			return nil
 		})
 
-		if err := do.Deploy(dyno.Command(func(ctx context.Context) error {
+		if err := do.Deploy(dyno.NewCommand(func(ctx context.Context) error {
 			topic, err := do.EventBus().Topic("hello")
 			if err != nil {
 				return err

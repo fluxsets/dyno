@@ -4,7 +4,7 @@ import "context"
 
 type CommandFunc func(ctx context.Context) error
 
-func Command(fn CommandFunc) Deployment {
+func NewCommand(fn CommandFunc) Deployment {
 	return &command{fn: fn}
 }
 
