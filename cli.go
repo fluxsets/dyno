@@ -7,23 +7,23 @@ import (
 
 type SetupFunc func(ctx context.Context, do Dyno) error
 
-type CLI struct {
+type App struct {
 	setup SetupFunc
 	dyno  Dyno
 }
 
-func NewCLI(o Option, setup SetupFunc) *CLI {
+func NewApp(o Option, setup SetupFunc) *App {
 	if o.ID == "" {
 		o.ID, _ = os.Hostname()
 	}
 	do := New(o)
-	return &CLI{
+	return &App{
 		setup: setup,
 		dyno:  do,
 	}
 }
 
-func (cli *CLI) Run() error {
+func (cli *App) Run() error {
 	if err := cli.setup(cli.dyno.Context(), cli.dyno); err != nil {
 		return err
 	}

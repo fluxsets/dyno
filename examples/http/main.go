@@ -19,7 +19,7 @@ func main() {
 	option := dyno.OptionFromFlags()
 	option.Name = "http-example"
 	option.Version = "v0.0.1"
-	cli := dyno.NewCLI(option, func(ctx context.Context, do dyno.Dyno) error {
+	app := dyno.NewApp(option, func(ctx context.Context, do dyno.Dyno) error {
 		config := &Config{}
 		if err := do.Config().Unmarshal(config); err != nil {
 			return err
@@ -47,7 +47,7 @@ func main() {
 		})
 		router := http.NewRouter()
 		router.HandleFunc("/hello", func(rw gohttp.ResponseWriter, r *gohttp.Request) {
-			rw.Write([]byte("hello"))
+			_, _ = rw.Write([]byte("hello"))
 		})
 		if err := do.Deploy(http.NewServer(":9090", router.ServeHTTP)); err != nil {
 			return err
@@ -64,7 +64,7 @@ func main() {
 
 		return nil
 	})
-	err := cli.Run()
+	err := app.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
