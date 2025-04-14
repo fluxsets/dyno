@@ -38,10 +38,12 @@ func (s *Server) Init(do dyno.Dyno) error {
 }
 
 func (s *Server) Start(ctx context.Context) error {
+	s.logger.Info("Starting HTTP server, listening on " + s.addr)
 	return s.Server.ListenAndServe(s.addr)
 }
 
 func (s *Server) Stop(ctx context.Context) {
+	s.logger.Info("Stopping HTTP server")
 	if err := s.Server.Shutdown(ctx); err != nil {
 		s.logger.Warn("Error shutting down http server", "error", err)
 	}
