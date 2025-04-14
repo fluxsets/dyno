@@ -9,7 +9,7 @@ import (
 type Config interface {
 	ConfigGetter
 	ConfigUnmarshaler
-	Path(key string) Config
+	Sub(key string) Config
 	Merge(data map[string]interface{})
 }
 
@@ -56,7 +56,7 @@ func (vc *viperConfig) Unmarshal(v any) error {
 	})
 }
 
-func (vc *viperConfig) Path(key string) Config {
+func (vc *viperConfig) Sub(key string) Config {
 	sub := vc.v.Sub(key)
 	return &viperConfig{
 		v: sub,

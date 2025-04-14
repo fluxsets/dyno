@@ -37,6 +37,9 @@ type dyno struct {
 func (do *dyno) Init() error {
 	do.initConfig()
 	do.initLogger()
+	do.hooks.OnStop(func(ctx context.Context) error {
+		return do.EventBus().Close(ctx)
+	})
 	return nil
 }
 
@@ -135,14 +138,16 @@ func (do *dyno) Hooks() Hooks {
 	return do.hooks
 }
 
-func New(o Option) Dyno {
+func New(ctx context.Context, o Option) Dyno {
 	do := &dyno{
+		ctx:  ctx,
 		o:    o,
 		runG: &run.Group{},
 		hooks: &hooks{
 			onStarts: []HookFunc{},
 			onStops:  []HookFunc{},
 		},
+		eventBus: newEventBus(),
 	}
 
 	if err := do.Init(); err != nil {

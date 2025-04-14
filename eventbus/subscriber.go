@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/fluxsets/dyno"
 	"gocloud.dev/pubsub"
-	"strings"
 )
 
 type HandlerFunc func(ctx context.Context, msg *pubsub.Message) error
@@ -13,20 +12,21 @@ const TopicSep = "::"
 
 type TopicURI string
 
-func NewTopic(namespace string, topic string) TopicURI {
-	return TopicURI(namespace + TopicSep + topic)
-}
+//func NewTopic(namespace string, topic string) TopicURI {
+//	return TopicURI(namespace + TopicSep + topic)
+//}
 
 func (t TopicURI) String() string {
 	return string(t)
 }
-func (t TopicURI) Namespace() string {
-	return strings.Split(string(t), TopicSep)[0]
-}
 
-func (t TopicURI) EventName() string {
-	return strings.Split(string(t), TopicSep)[1]
-}
+//func (t TopicURI) Namespace() string {
+//	return strings.Split(string(t), TopicSep)[0]
+//}
+//
+//func (t TopicURI) EventName() string {
+//	return strings.Split(string(t), TopicSep)[1]
+//}
 
 type Subscriber struct {
 	topic   TopicURI
@@ -35,12 +35,16 @@ type Subscriber struct {
 	subs    *pubsub.Subscription
 }
 
+func NewSubscriber(topic TopicURI, h HandlerFunc) *Subscriber {
+	return &Subscriber{
+		topic:   topic,
+		handler: h,
+	}
+}
+
 func NewSubscriberProducer(topic TopicURI, h HandlerFunc) dyno.DeploymentProducer {
 	return func() dyno.Deployment {
-		return &Subscriber{
-			topic:   topic,
-			handler: h,
-		}
+		return NewSubscriber(topic, h)
 	}
 }
 
@@ -50,8 +54,9 @@ func (s *Subscriber) ID() string {
 
 func (s *Subscriber) Init(do dyno.Dyno) error {
 	s.dyno = do
-	s.subs = s.dyno.EventBus().Subscription(s.topic.EventName())
-	return nil
+	var err error
+	s.subs, err = s.dyno.EventBus().Subscription(s.topic.String())
+	return err
 }
 
 func (s *Subscriber) Start(ctx context.Context) error {
