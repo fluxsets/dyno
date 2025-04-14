@@ -55,19 +55,9 @@ func (do *dyno) initLogger() {
 
 func (do *dyno) initConfig() {
 	configPaths := strings.Split(do.o.Conf, ",")
-	kwargs := map[string]any{}
-	args := strings.Split(do.o.KWArgs, ",")
-	for _, s := range args {
-		kv := strings.Split(s, "=")
-		if len(kv) != 2 {
-			continue
-		}
-		key := strings.TrimSpace(kv[0])
-		value := strings.TrimSpace(kv[1])
-		kwargs[key] = value
-	}
+
 	do.c = newConfig(configPaths, []string{"yaml"})
-	do.c.Merge(kwargs)
+	do.c.Merge(do.o.KWArgsAsMap())
 }
 
 func (do *dyno) DeployFromProducer(producer DeploymentProducer, options DeploymentOptions) error {

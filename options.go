@@ -1,10 +1,12 @@
 package dyno
 
 import (
+	"encoding/json"
 	"github.com/AdamSLevy/flagbind"
 	"github.com/spf13/pflag"
 	"log"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -18,11 +20,31 @@ type Option struct {
 	ShutdownTimeout time.Duration `json:"shutdown_timeout"`
 }
 
+func (o *Option) String() string {
+	bs, _ := json.Marshal(o)
+	return string(bs)
+
+}
 func (o *Option) ensureDefaults() {
 	if o.ID == "" {
 		o.ID, _ = os.Hostname()
 	}
 	o.ShutdownTimeout = 5 * time.Second
+}
+
+func (o *Option) KWArgsAsMap() map[string]any {
+	kwargs := map[string]any{}
+	args := strings.Split(o.KWArgs, ",")
+	for _, s := range args {
+		kv := strings.Split(s, "=")
+		if len(kv) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(kv[0])
+		value := strings.TrimSpace(kv[1])
+		kwargs[key] = value
+	}
+	return kwargs
 }
 
 func OptionFromFlags() Option {

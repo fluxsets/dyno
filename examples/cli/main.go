@@ -27,7 +27,7 @@ func main() {
 
 		opt := do.Option()
 		logger := do.Logger()
-		logger.Info("parsed option", "option", opt)
+		logger.Info("parsed option", "option", opt.String())
 		logger.Info("parsed config", "config", config)
 
 		do.Hooks().OnStart(func(ctx context.Context) error {
