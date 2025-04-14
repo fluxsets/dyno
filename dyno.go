@@ -61,6 +61,7 @@ func (do *dyno) initConfig() {
 }
 
 func (do *dyno) DeployFromProducer(producer DeploymentProducer, options DeploymentOptions) error {
+	options.ensureDefaults()
 	var deployments []Deployment
 	for i := 0; i < options.Instances; i++ {
 		dep := producer()
