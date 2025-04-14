@@ -17,7 +17,7 @@ type Dyno interface {
 	Config() Config
 	Option() Option
 	Context() context.Context
-	DeployFromProducer(producer DeploymentProducer, options DeploymentOptions) error
+	DeployFromProducer(producer DeploymentProducer, options DeploymentOptions) ([]Deployment, error)
 	Deploy(deployments ...Deployment) error
 	Run() error
 	EventBus() EventBus
@@ -60,14 +60,14 @@ func (do *dyno) initConfig() {
 	do.c.Merge(do.o.KWArgsAsMap())
 }
 
-func (do *dyno) DeployFromProducer(producer DeploymentProducer, options DeploymentOptions) error {
+func (do *dyno) DeployFromProducer(producer DeploymentProducer, options DeploymentOptions) ([]Deployment, error) {
 	options.ensureDefaults()
 	var deployments []Deployment
 	for i := 0; i < options.Instances; i++ {
 		dep := producer()
 		deployments = append(deployments, dep)
 	}
-	return do.Deploy(deployments...)
+	return deployments, do.Deploy(deployments...)
 }
 
 func (do *dyno) Config() Config {

@@ -152,11 +152,13 @@ func (ps *pubSub) Topic(id string) (*pubsub.Topic, error) {
 }
 
 func newEventBus() EventBus {
-	return &pubSub{
+
+	bus := &pubSub{
 		mu:        sync.RWMutex{},
 		options:   map[string]TopicOption{},
 		topics:    map[string]*pubsub.Topic{},
 		memTopics: map[string]*pubsub.Topic{},
 		memMu:     sync.RWMutex{},
 	}
+	return bus
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/fluxsets/dyno/eventbus"
 	"github.com/fluxsets/dyno/server/http"
 	"gocloud.dev/pubsub"
+	"gocloud.dev/server/health"
 	"log"
 	gohttp "net/http"
 )
@@ -25,21 +26,26 @@ func main() {
 			return err
 		}
 		do.EventBus().Init(config.PubSub)
-
 		opt := do.Option()
 		logger := do.Logger()
 		logger.Info("parsed option", "option", opt)
 		logger.Info("parsed config", "config", config)
 
+		healthChecks := []health.Checker{}
+
 		do.Hooks().OnStart(func(ctx context.Context) error {
 			do.Logger().Info("on start")
 			return nil
 		})
-		if err := do.DeployFromProducer(eventbus.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
+		if deps, err := do.DeployFromProducer(eventbus.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
 			logger.Info("recv event", "message", string(msg.Body))
 			return nil
 		}), dyno.DeploymentOptions{Instances: 1}); err != nil {
 			return err
+		} else {
+			for _, dep := range deps {
+				healthChecks = append(healthChecks, dep)
+			}
 		}
 		do.Hooks().OnStop(func(ctx context.Context) error {
 			do.Logger().Info("on stop")
@@ -49,7 +55,7 @@ func main() {
 		router.HandleFunc("/hello", func(rw gohttp.ResponseWriter, r *gohttp.Request) {
 			_, _ = rw.Write([]byte("hello"))
 		})
-		if err := do.Deploy(http.NewServer(":9090", router.ServeHTTP)); err != nil {
+		if err := do.Deploy(http.NewServer(":9090", router.ServeHTTP, healthChecks)); err != nil {
 			return err
 		}
 		topic, err := do.EventBus().Topic("hello")

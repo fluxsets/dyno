@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/fluxsets/dyno"
 	"gocloud.dev/server"
+	"gocloud.dev/server/health"
 	"log/slog"
 	"net/http"
 )
@@ -12,9 +13,10 @@ func NewRouter() *http.ServeMux {
 	return http.NewServeMux()
 }
 
-func NewServer(addr string, h http.HandlerFunc) *Server {
+func NewServer(addr string, h http.HandlerFunc, healthChecks []health.Checker) *Server {
 	hs := server.New(h, &server.Options{
-		Driver: server.NewDefaultDriver(),
+		HealthChecks: healthChecks,
+		Driver:       server.NewDefaultDriver(),
 	})
 	return &Server{
 		Server: hs,
@@ -26,6 +28,10 @@ type Server struct {
 	*server.Server
 	addr   string
 	logger *slog.Logger
+}
+
+func (s *Server) CheckHealth() error {
+	return nil
 }
 
 func (s *Server) Name() string {

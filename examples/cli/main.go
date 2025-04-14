@@ -5,6 +5,7 @@ import (
 	"github.com/fluxsets/dyno"
 	"github.com/fluxsets/dyno/eventbus"
 	"gocloud.dev/pubsub"
+	"gocloud.dev/server/health"
 	"log"
 	"time"
 )
@@ -35,11 +36,16 @@ func main() {
 			return nil
 		})
 
-		if err := do.DeployFromProducer(eventbus.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
+		healthChecks := []health.Checker{}
+		if deployments, err := do.DeployFromProducer(eventbus.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
 			logger.Info("recv event", "message", string(msg.Body))
 			return nil
 		}), dyno.DeploymentOptions{Instances: 1}); err != nil {
 			return err
+		} else {
+			for _, deployment := range deployments {
+				healthChecks = append(healthChecks, deployment)
+			}
 		}
 
 		do.Hooks().OnStop(func(ctx context.Context) error {

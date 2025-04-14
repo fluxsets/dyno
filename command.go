@@ -13,6 +13,10 @@ type command struct {
 	dyno Dyno
 }
 
+func (cmd *command) CheckHealth() error {
+	return nil
+}
+
 func (cmd *command) Name() string {
 	return "command"
 }

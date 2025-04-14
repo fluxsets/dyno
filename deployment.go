@@ -1,8 +1,12 @@
 package dyno
 
-import "context"
+import (
+	"context"
+	"gocloud.dev/server/health"
+)
 
 type Deployment interface {
+	health.Checker
 	Name() string
 	Init(do Dyno) error
 	Start(ctx context.Context) error

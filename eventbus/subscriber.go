@@ -35,6 +35,7 @@ type Subscriber struct {
 	handler HandlerFunc
 	subs    *pubsub.Subscription
 	logger  *slog.Logger
+	dyno.HealthCheck
 }
 
 func NewSubscriber(topic TopicURI, h HandlerFunc) *Subscriber {
@@ -64,6 +65,7 @@ func (s *Subscriber) Init(do dyno.Dyno) error {
 
 func (s *Subscriber) Start(ctx context.Context) error {
 	s.logger.Info("starting subscriber")
+	s.SetHealthy(true)
 	var err error
 	for {
 		var msg *pubsub.Message
@@ -76,6 +78,7 @@ func (s *Subscriber) Start(ctx context.Context) error {
 		}
 		msg.Ack()
 	}
+	s.SetHealthy(false)
 	return err
 }
 
