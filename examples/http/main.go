@@ -8,8 +8,25 @@ import (
 	gohttp "net/http"
 )
 
+type Config struct {
+	Addr string `json:"addr"`
+	A    string `json:"a"`
+	B    string `json:"b"`
+}
+
 func main() {
-	cli := dyno.NewCLI(func(ctx context.Context, do dyno.Dyno) error {
+	option := dyno.OptionFromFlags()
+	option.Name = "http-example"
+	option.Version = "v0.0.1"
+	cli := dyno.NewCLI(option, func(ctx context.Context, do dyno.Dyno) error {
+		opt := do.Option()
+		logger := do.Logger()
+		logger.Info("parsed option", "option", opt)
+		config := &Config{}
+		if err := do.Config().Unmarshal(config); err != nil {
+			return err
+		}
+		logger.Info("parsed config", "config", config)
 		do.Hooks().OnStart(func(ctx context.Context) error {
 			do.Logger().Info("pre start")
 			return nil
@@ -23,7 +40,7 @@ func main() {
 		}
 
 		return nil
-	}, dyno.BindOption())
+	})
 	err := cli.Run()
 	if err != nil {
 		log.Fatal(err)

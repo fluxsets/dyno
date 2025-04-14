@@ -1,6 +1,9 @@
 package dyno
 
-import "context"
+import (
+	"context"
+	"os"
+)
 
 type SetupFunc func(ctx context.Context, do Dyno) error
 
@@ -11,9 +14,11 @@ type CLI struct {
 	dyno   Dyno
 }
 
-func NewCLI(setup SetupFunc, opts ...Option) *CLI {
-	o := opts[0]
-	do := newDyno(o)
+func NewCLI(o Option, setup SetupFunc) *CLI {
+	if o.ID == "" {
+		o.ID, _ = os.Hostname()
+	}
+	do := New(o)
 	return &CLI{
 		setup: setup,
 		dyno:  do,

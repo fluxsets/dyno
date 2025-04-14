@@ -12,9 +12,11 @@ type Option struct {
 	Conf     string `json:"conf" flag:"conf;./configs;config path, eg:--conf ./configs"`
 	LogLevel string `json:"loglevel" flag:"loglevel;debug;default log level"`
 	KWArgs   string `json:"kwargs" flag:"kwargs;;extern args, eg: --kwargs a=1,b=2"`
+	Version  string `json:"version"`
+	Name     string `json:"name"`
 }
 
-func BindOption() Option {
+func OptionFromFlags() Option {
 	fs := pflag.NewFlagSet("", pflag.ExitOnError)
 	option := Option{}
 	if err := flagbind.Bind(fs, &option); err != nil {

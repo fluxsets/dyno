@@ -13,7 +13,7 @@ type DeploymentOptions struct {
 	Instances int `json:"instances"` // 实例数
 }
 
-type DeploymentFactory func() Deployment
+type DeploymentProducer func() Deployment
 
 type DeploymentSet []Deployment
 

@@ -3,14 +3,18 @@ package dyno
 import (
 	"context"
 	"github.com/oklog/run"
+	"log"
 	"log/slog"
+	"strings"
 )
 
 type Dyno interface {
+	Init() error
+	Config() Config
 	Option() Option
 	Context() context.Context
-	DeployWithOptions(factory DeploymentFactory, options DeploymentOptions) error
-	Deploy(deps ...Deployment) error
+	DeployFromProducer(producer DeploymentProducer, options DeploymentOptions) error
+	Deploy(deployments ...Deployment) error
 	Run() error
 	EventBus() EventBus
 	Hooks() Hooks
@@ -24,15 +28,47 @@ type dyno struct {
 	eventBus EventBus
 	hooks    *hooks
 	logger   *slog.Logger
+	c        Config
 }
 
-func (do *dyno) DeployWithOptions(factory DeploymentFactory, options DeploymentOptions) error {
-	var deps []Deployment
-	for i := 0; i < options.Instances; i++ {
-		dep := factory()
-		deps = append(deps, dep)
+func (do *dyno) Init() error {
+	do.initConfig()
+	do.initLogger()
+	return nil
+}
+
+func (do *dyno) initLogger() {
+	do.logger = slog.Default().With("logger", "dyno", "version", do.o.Version, "service_name", do.o.Name, "service_id", do.o.ID)
+}
+
+func (do *dyno) initConfig() {
+	configPaths := strings.Split(do.o.Conf, ",")
+	kwargs := map[string]any{}
+	args := strings.Split(do.o.KWArgs, ",")
+	for _, s := range args {
+		kv := strings.Split(s, "=")
+		if len(kv) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(kv[0])
+		value := strings.TrimSpace(kv[1])
+		kwargs[key] = value
 	}
-	return do.Deploy(deps...)
+	do.c = newConfig(configPaths, []string{"yaml"})
+	do.c.Merge(kwargs)
+}
+
+func (do *dyno) DeployFromProducer(producer DeploymentProducer, options DeploymentOptions) error {
+	var deployments []Deployment
+	for i := 0; i < options.Instances; i++ {
+		dep := producer()
+		deployments = append(deployments, dep)
+	}
+	return do.Deploy(deployments...)
+}
+
+func (do *dyno) Config() Config {
+	return do.c
 }
 
 func (do *dyno) Logger(args ...any) *slog.Logger {
@@ -47,8 +83,8 @@ func (do *dyno) Option() Option {
 	return do.o
 }
 
-func (do *dyno) Deploy(deps ...Deployment) error {
-	for _, dep := range deps {
+func (do *dyno) Deploy(deployments ...Deployment) error {
+	for _, dep := range deployments {
 		ctx, cancel := context.WithCancel(context.Background())
 		if err := dep.Init(do); err != nil {
 			cancel()
@@ -87,14 +123,18 @@ func (do *dyno) Hooks() Hooks {
 	return do.hooks
 }
 
-func newDyno(o Option) Dyno {
-	return &dyno{
-		o:      o,
-		runG:   &run.Group{},
-		logger: slog.Default(),
+func New(o Option) Dyno {
+	do := &dyno{
+		o:    o,
+		runG: &run.Group{},
 		hooks: &hooks{
 			onStarts: []HookFunc{},
 			onStops:  []HookFunc{},
 		},
 	}
+
+	if err := do.Init(); err != nil {
+		log.Fatal(err)
+	}
+	return do
 }
