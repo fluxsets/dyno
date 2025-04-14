@@ -5,7 +5,10 @@ import (
 	"github.com/oklog/run"
 	"log"
 	"log/slog"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 )
 
 type Dyno interface {
@@ -101,18 +104,27 @@ func (do *dyno) Deploy(deployments ...Deployment) error {
 }
 
 func (do *dyno) Run() error {
+	do.Logger().Info("starting")
 	for _, fn := range do.hooks.onStarts {
 		if err := fn(do.ctx); err != nil {
 			return err
 		}
 	}
-	err := do.runG.Run()
-	for _, fn := range do.hooks.onStops {
-		if err := fn(do.ctx); err != nil {
-			do.logger.ErrorContext(do.ctx, "post stop func called error", "error", err)
+	do.runG.Add(func() error {
+		exit := make(chan os.Signal, 1)
+		signal.Notify(exit, syscall.SIGINT, syscall.SIGTERM)
+		<-exit
+		return nil
+	}, func(err error) {
+		do.Logger().Info("shutting down")
+		for _, fn := range do.hooks.onStops {
+			fn := fn
+			if err := fn(do.ctx); err != nil {
+				do.logger.ErrorContext(do.ctx, "post stop func called error", "error", err)
+			}
 		}
-	}
-	return err
+	})
+	return do.runG.Run()
 }
 
 func (do *dyno) EventBus() EventBus {

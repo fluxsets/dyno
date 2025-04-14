@@ -28,7 +28,11 @@ func main() {
 		}
 		logger.Info("parsed config", "config", config)
 		do.Hooks().OnStart(func(ctx context.Context) error {
-			do.Logger().Info("pre start")
+			do.Logger().Info("on start")
+			return nil
+		})
+		do.Hooks().OnStop(func(ctx context.Context) error {
+			do.Logger().Info("on stop")
 			return nil
 		})
 		router := http.NewRouter()
