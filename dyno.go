@@ -13,6 +13,7 @@ import (
 
 type Dyno interface {
 	Init() error
+	Close()
 	Config() Config
 	Option() Option
 	Context() context.Context
@@ -25,13 +26,18 @@ type Dyno interface {
 }
 
 type dyno struct {
-	ctx      context.Context
-	o        Option
-	runG     *run.Group
-	eventBus EventBus
-	hooks    *hooks
-	logger   *slog.Logger
-	c        Config
+	ctx       context.Context
+	cancelCtx context.CancelFunc
+	o         Option
+	runG      *run.Group
+	eventBus  EventBus
+	hooks     *hooks
+	logger    *slog.Logger
+	c         Config
+}
+
+func (do *dyno) Close() {
+	do.cancelCtx()
 }
 
 func (do *dyno) Init() error {
@@ -116,13 +122,19 @@ func (do *dyno) Run() error {
 	do.runG.Add(func() error {
 		exit := make(chan os.Signal, 1)
 		signal.Notify(exit, syscall.SIGINT, syscall.SIGTERM)
-		<-exit
-		return nil
+		select {
+		case <-do.ctx.Done():
+			return nil
+		case <-exit:
+			return nil
+		}
 	}, func(err error) {
 		do.Logger().Info("shutting down")
+		ctx, cancelCtx := context.WithTimeout(context.TODO(), do.o.ShutdownTimeout)
+		defer cancelCtx()
 		for _, fn := range do.hooks.onStops {
 			fn := fn
-			if err := fn(do.ctx); err != nil {
+			if err := fn(ctx); err != nil {
 				do.logger.ErrorContext(do.ctx, "post stop func called error", "error", err)
 			}
 		}
@@ -138,9 +150,9 @@ func (do *dyno) Hooks() Hooks {
 	return do.hooks
 }
 
-func New(ctx context.Context, o Option) Dyno {
+func New(o Option) Dyno {
+	o.ensureDefaults()
 	do := &dyno{
-		ctx:  ctx,
 		o:    o,
 		runG: &run.Group{},
 		hooks: &hooks{
@@ -149,7 +161,7 @@ func New(ctx context.Context, o Option) Dyno {
 		},
 		eventBus: newEventBus(),
 	}
-
+	do.ctx, do.cancelCtx = context.WithCancel(context.Background())
 	if err := do.Init(); err != nil {
 		log.Fatal(err)
 	}

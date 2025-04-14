@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/fluxsets/dyno"
 	"gocloud.dev/pubsub"
+	"log/slog"
 )
 
 type HandlerFunc func(ctx context.Context, msg *pubsub.Message) error
@@ -33,6 +34,7 @@ type Subscriber struct {
 	dyno    dyno.Dyno
 	handler HandlerFunc
 	subs    *pubsub.Subscription
+	logger  *slog.Logger
 }
 
 func NewSubscriber(topic TopicURI, h HandlerFunc) *Subscriber {
@@ -49,17 +51,19 @@ func NewSubscriberProducer(topic TopicURI, h HandlerFunc) dyno.DeploymentProduce
 }
 
 func (s *Subscriber) Name() string {
-	return "subscriber:" + s.topic.String()
+	return "subscriber@" + s.topic.String()
 }
 
 func (s *Subscriber) Init(do dyno.Dyno) error {
 	s.dyno = do
 	var err error
 	s.subs, err = s.dyno.EventBus().Subscription(s.topic.String())
+	s.logger = do.Logger("logger", s.Name())
 	return err
 }
 
 func (s *Subscriber) Start(ctx context.Context) error {
+	s.logger.Info("starting subscriber")
 	var err error
 	for {
 		var msg *pubsub.Message
@@ -79,6 +83,7 @@ func (s *Subscriber) Stop(ctx context.Context) {
 	if err := s.subs.Shutdown(ctx); err != nil {
 		s.dyno.Logger().Error("subscription shutdown error", "topic", s.topic, "error", err)
 	}
+	s.logger.Info("subscriber shut down")
 }
 
 var _ dyno.ServerLike = new(Subscriber)
