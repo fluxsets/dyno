@@ -48,7 +48,7 @@ func NewSubscriberProducer(topic TopicURI, h HandlerFunc) dyno.DeploymentProduce
 	}
 }
 
-func (s *Subscriber) ID() string {
+func (s *Subscriber) Name() string {
 	return "subscriber:" + s.topic.String()
 }
 

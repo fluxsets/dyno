@@ -28,12 +28,12 @@ type Server struct {
 	logger *slog.Logger
 }
 
-func (s *Server) ID() string {
+func (s *Server) Name() string {
 	return "http"
 }
 
 func (s *Server) Init(do dyno.Dyno) error {
-	s.logger = do.Logger("deployment", s.ID())
+	s.logger = do.Logger("deployment", s.Name())
 	return nil
 }
 
