@@ -16,7 +16,7 @@ type Config struct {
 
 func main() {
 	option := dyno.OptionFromFlags()
-	option.Name = "http-example"
+	option.Name = "cli-example"
 	option.Version = "v0.0.1"
 	cli := dyno.NewCLI(option, func(ctx context.Context, do dyno.Dyno) error {
 		config := &Config{}
