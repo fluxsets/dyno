@@ -12,7 +12,7 @@ import (
 )
 
 type EventBusOption struct {
-	BridgeTopics map[string]TopicOption `json:"bridge_topics"`
+	ExternalTopics map[string]TopicOption `json:"external_topics"`
 }
 
 type EventBus interface {
@@ -60,7 +60,7 @@ func (ps *pubSub) Close(ctx context.Context) error {
 }
 
 func (ps *pubSub) Init(o EventBusOption) {
-	for k, o := range o.BridgeTopics {
+	for k, o := range o.ExternalTopics {
 		ps.bridgeOptions[k] = o
 	}
 }

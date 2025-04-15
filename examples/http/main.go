@@ -25,7 +25,7 @@ func main() {
 		if err := do.Config().Unmarshal(config); err != nil {
 			return err
 		}
-		do.EventBus().Init(dyno.EventBusOption{BridgeTopics: config.PubSub})
+		do.EventBus().Init(dyno.EventBusOption{ExternalTopics: config.PubSub})
 		opt := do.Option()
 		logger := do.Logger()
 		logger.Info("parsed option", "option", opt)
@@ -55,7 +55,7 @@ func main() {
 		router.HandleFunc("/", func(rw gohttp.ResponseWriter, r *gohttp.Request) {
 			_, _ = rw.Write([]byte("hello"))
 		})
-		if err := do.Deploy(http.NewServer(":9090", router.ServeHTTP, healthChecks)); err != nil {
+		if err := do.Deploy(http.NewServer(":9090", router.ServeHTTP, healthChecks, do.Logger("logger", "http-requestlog"))); err != nil {
 			return err
 		}
 		topic, err := do.EventBus().Topic("hello")

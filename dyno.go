@@ -50,6 +50,11 @@ func (do *dyno) Init() error {
 }
 
 func (do *dyno) initLogger() {
+	level := slog.LevelDebug
+	if do.o.LogLevel != "" {
+		_ = level.UnmarshalText([]byte(do.o.LogLevel))
+	}
+	slog.SetLogLoggerLevel(level)
 	do.logger = slog.Default().With("logger", "dyno", "version", do.o.Version, "service_name", do.o.Name, "service_id", do.o.ID)
 }
 
