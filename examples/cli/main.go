@@ -24,7 +24,7 @@ func main() {
 		if err := do.Config().Unmarshal(config); err != nil {
 			return err
 		}
-		do.EventBus().Init(config.PubSub)
+		do.EventBus().Init(dyno.EventBusOption{BridgeTopics: config.PubSub})
 
 		opt := do.Option()
 		logger := do.Logger()

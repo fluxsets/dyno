@@ -11,8 +11,12 @@ import (
 	"time"
 )
 
+type EventBusOption struct {
+	BridgeTopics map[string]TopicOption `json:"bridge_topics"`
+}
+
 type EventBus interface {
-	Init(options map[string]TopicOption)
+	Init(o EventBusOption)
 	Subscription(topic string) (*pubsub.Subscription, error)
 	Topic(topic string) (*pubsub.Topic, error)
 	Close(ctx context.Context) error
@@ -20,8 +24,8 @@ type EventBus interface {
 
 type TopicOption struct {
 	Provider string            `json:"provider"`
-	TopicID  string            `json:"topic_id"`
 	Kafka    *KafkaTopicOption `json:"kafka,omitempty"`
+	//TopicID  string            `json:"topic_id"`
 }
 
 type KafkaTopicOption struct {
@@ -35,11 +39,12 @@ type KafkaSubscription struct {
 }
 
 type pubSub struct {
-	mu        sync.RWMutex
-	options   map[string]TopicOption
-	topics    map[string]*pubsub.Topic
-	memTopics map[string]*pubsub.Topic
-	memMu     sync.RWMutex
+	o             EventBusOption
+	mu            sync.RWMutex
+	bridgeOptions map[string]TopicOption
+	topics        map[string]*pubsub.Topic
+	memTopics     map[string]*pubsub.Topic
+	memMu         sync.RWMutex
 }
 
 func (ps *pubSub) Close(ctx context.Context) error {
@@ -54,9 +59,9 @@ func (ps *pubSub) Close(ctx context.Context) error {
 	return multiErr
 }
 
-func (ps *pubSub) Init(options map[string]TopicOption) {
-	for k, o := range options {
-		ps.options[k] = o
+func (ps *pubSub) Init(o EventBusOption) {
+	for k, o := range o.BridgeTopics {
+		ps.bridgeOptions[k] = o
 	}
 }
 
@@ -71,7 +76,7 @@ func (ps *pubSub) addTopic(id string, topic *pubsub.Topic) {
 }
 
 func (ps *pubSub) openSubscription(id string) (*pubsub.Subscription, error) {
-	o, ok := ps.options[id]
+	o, ok := ps.bridgeOptions[id]
 	if ok && o.Provider == "kafka" {
 		return ps.openKafkaSubscription(o.Kafka)
 	}
@@ -129,7 +134,7 @@ func (ps *pubSub) openKafkaTopic(o *KafkaTopicOption) (*pubsub.Topic, error) {
 }
 
 func (ps *pubSub) openTopic(id string) (*pubsub.Topic, error) {
-	o, ok := ps.options[id]
+	o, ok := ps.bridgeOptions[id]
 	if ok && o.Provider == "kafka" {
 		return ps.openKafkaTopic(o.Kafka)
 	}
@@ -154,11 +159,11 @@ func (ps *pubSub) Topic(id string) (*pubsub.Topic, error) {
 func newEventBus() EventBus {
 
 	bus := &pubSub{
-		mu:        sync.RWMutex{},
-		options:   map[string]TopicOption{},
-		topics:    map[string]*pubsub.Topic{},
-		memTopics: map[string]*pubsub.Topic{},
-		memMu:     sync.RWMutex{},
+		mu:            sync.RWMutex{},
+		bridgeOptions: map[string]TopicOption{},
+		topics:        map[string]*pubsub.Topic{},
+		memTopics:     map[string]*pubsub.Topic{},
+		memMu:         sync.RWMutex{},
 	}
 	return bus
 }
