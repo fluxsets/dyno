@@ -57,16 +57,16 @@ func (s *Subscriber) Name() string {
 
 func (s *Subscriber) Init(do dyno.Dyno) error {
 	s.dyno = do
-	var err error
-	s.subs, err = s.dyno.EventBus().Subscription(s.topic.String())
 	s.logger = do.Logger("logger", s.Name())
-	return err
+	return nil
 }
 
 func (s *Subscriber) Start(ctx context.Context) error {
 	s.logger.Info("starting subscriber")
 	s.SetHealthy(true)
+
 	var err error
+	s.subs, err = s.dyno.EventBus().Subscription(s.topic.String())
 	for {
 		var msg *pubsub.Message
 		msg, err = s.subs.Receive(ctx)
