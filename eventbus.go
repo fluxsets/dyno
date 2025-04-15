@@ -129,7 +129,7 @@ func (ps *pubSub) getTopic(id string) (*pubsub.Topic, bool) {
 
 func (ps *pubSub) openKafkaTopic(o *KafkaTopicOption) (*pubsub.Topic, error) {
 	config := kafkapubsub.MinimalConfig()
-	topic, err := kafkapubsub.OpenTopic(o.Servers, config, o.Topic, nil)
+	topic, err := kafkapubsub.OpenTopic(o.Servers, config, o.Topic, &kafkapubsub.TopicOptions{KeyName: KeyName})
 	return topic, err
 }
 
@@ -167,3 +167,5 @@ func newEventBus() EventBus {
 	}
 	return bus
 }
+
+const KeyName = "_KEY"

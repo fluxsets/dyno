@@ -60,6 +60,9 @@ func main() {
 			}
 			if err := topic.Send(ctx, &pubsub.Message{
 				Body: []byte("hello"),
+				Metadata: map[string]string{
+					dyno.KeyName: "hello",
+				},
 			}); err != nil {
 				logger.Info("failed to send message", "error", err)
 			}
