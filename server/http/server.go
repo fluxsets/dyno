@@ -16,7 +16,7 @@ func NewRouter() *http.ServeMux {
 func NewServer(addr string, h http.HandlerFunc, healthChecks []health.Checker, logger *slog.Logger) *Server {
 	hs := server.New(h, &server.Options{
 		HealthChecks: healthChecks,
-		RequestLogger: NewStackdriverLogger(logger, func(err error) {
+		RequestLogger: NewRequestLogger(logger, func(err error) {
 		}),
 		Driver: server.NewDefaultDriver(),
 	})

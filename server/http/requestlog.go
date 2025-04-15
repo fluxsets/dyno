@@ -7,10 +7,10 @@ import (
 	"time"
 )
 
-// A StackdriverLogger writes log entries in the Stackdriver forward JSON
+// A RequestLogger writes log entries in the Stackdriver forward JSON
 // format.  The record's fields are suitable for consumption by
 // Stackdriver Logging.
-type StackdriverLogger struct {
+type RequestLogger struct {
 	onErr func(error)
 
 	//mu     sync.Mutex
@@ -20,10 +20,10 @@ type StackdriverLogger struct {
 	//enc *json.Encoder
 }
 
-// NewStackdriverLogger returns a new logger that writes to w.
+// NewRequestLogger returns a new logger that writes to w.
 // A nil onErr is treated the same as func(error) {}.
-func NewStackdriverLogger(logger *slog.Logger, onErr func(error)) *StackdriverLogger {
-	l := &StackdriverLogger{
+func NewRequestLogger(logger *slog.Logger, onErr func(error)) *RequestLogger {
+	l := &RequestLogger{
 		logger: logger,
 		onErr:  onErr,
 	}
@@ -33,13 +33,13 @@ func NewStackdriverLogger(logger *slog.Logger, onErr func(error)) *StackdriverLo
 
 // Log writes a record to its writer.  Multiple concurrent calls will
 // produce sequential writes to its writer.
-func (l *StackdriverLogger) Log(ent *requestlog.Entry) {
+func (l *RequestLogger) Log(ent *requestlog.Entry) {
 	if err := l.log(ent); err != nil && l.onErr != nil {
 		l.onErr(err)
 	}
 }
 
-func (l *StackdriverLogger) log(ent *requestlog.Entry) error {
+func (l *RequestLogger) log(ent *requestlog.Entry) error {
 	//defer l.mu.Unlock()
 	//l.mu.Lock()
 

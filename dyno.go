@@ -3,6 +3,8 @@ package dyno
 import (
 	"context"
 	"github.com/oklog/run"
+	slogzap "github.com/samber/slog-zap/v2"
+	"go.uber.org/zap"
 	"log"
 	"log/slog"
 	"os"
@@ -54,8 +56,12 @@ func (do *dyno) initLogger() {
 	if do.o.LogLevel != "" {
 		_ = level.UnmarshalText([]byte(do.o.LogLevel))
 	}
+	zapLogger, _ := zap.NewProduction()
+	logger := slog.New(slogzap.Option{Level: level, Logger: zapLogger}.NewZapHandler())
+	logger = logger.With("logger", "dyno", "version", do.o.Version, "service_name", do.o.Name, "service_id", do.o.ID)
+	slog.SetDefault(logger)
 	slog.SetLogLoggerLevel(level)
-	do.logger = slog.Default().With("logger", "dyno", "version", do.o.Version, "service_name", do.o.Name, "service_id", do.o.ID)
+	do.logger = logger
 }
 
 func (do *dyno) initConfig() {
