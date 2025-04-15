@@ -53,14 +53,23 @@ func (do *dyno) Init() error {
 
 func (do *dyno) initLogger() {
 	level := slog.LevelDebug
+	atomicLevel := zap.NewAtomicLevel()
+
+	zapLevel := zap.DebugLevel
 	if do.o.LogLevel != "" {
 		_ = level.UnmarshalText([]byte(do.o.LogLevel))
+		_ = zapLevel.UnmarshalText([]byte(do.o.LogLevel))
 	}
-	zapLogger, _ := zap.NewProduction()
-	logger := slog.New(slogzap.Option{Level: level, Logger: zapLogger}.NewZapHandler())
-	logger = logger.With("logger", "dyno", "version", do.o.Version, "service_name", do.o.Name, "service_id", do.o.ID)
-	slog.SetDefault(logger)
+	atomicLevel.SetLevel(zapLevel)
+
+	zapConfig := zap.NewProductionConfig()
+	zapConfig.Level = atomicLevel
+	//zapConfig.EncoderConfig.EncodeTime= zap.En
+	zapLogger, _ := zapConfig.Build()
 	slog.SetLogLoggerLevel(level)
+	logger := slog.New(slogzap.Option{Level: level, Logger: zapLogger}.NewZapHandler())
+	logger = logger.With("version", do.o.Version, "service_name", do.o.Name, "service_id", do.o.ID)
+	slog.SetDefault(logger)
 	do.logger = logger
 }
 
