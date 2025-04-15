@@ -52,7 +52,7 @@ func main() {
 			return nil
 		})
 		router := http.NewRouter()
-		router.HandleFunc("/hello", func(rw gohttp.ResponseWriter, r *gohttp.Request) {
+		router.HandleFunc("/", func(rw gohttp.ResponseWriter, r *gohttp.Request) {
 			_, _ = rw.Write([]byte("hello"))
 		})
 		if err := do.Deploy(http.NewServer(":9090", router.ServeHTTP, healthChecks)); err != nil {
