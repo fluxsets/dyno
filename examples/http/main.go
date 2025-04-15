@@ -66,6 +66,7 @@ func main() {
 			Body: []byte("hello"),
 			Metadata: map[string]string{
 				dyno.KeyName: "hello",
+				"from":       do.Option().ID,
 			},
 		}); err != nil {
 			logger.Info("failed to send message", "error", err)
