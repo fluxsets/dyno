@@ -2,7 +2,7 @@ package http
 
 import (
 	"context"
-	"github.com/fluxsets/dyno"
+	"github.com/fluxsets/orbit"
 	"gocloud.dev/server"
 	"gocloud.dev/server/health"
 	"log/slog"
@@ -40,8 +40,8 @@ func (s *Server) Name() string {
 	return "http"
 }
 
-func (s *Server) Init(do dyno.Dyno) error {
-	s.logger = do.Logger("deployment", s.Name())
+func (s *Server) Init(ob orbit.Orbit) error {
+	s.logger = ob.Logger("deployment", s.Name())
 	return nil
 }
 
@@ -57,4 +57,4 @@ func (s *Server) Stop(ctx context.Context) {
 	}
 }
 
-var _ dyno.ServerLike = (*Server)(nil)
+var _ orbit.ServerLike = (*Server)(nil)

@@ -1,4 +1,4 @@
-package dyno
+package orbit
 
 import "context"
 
@@ -9,8 +9,8 @@ func NewCommand(fn CommandFunc) Deployment {
 }
 
 type command struct {
-	fn   CommandFunc
-	dyno Dyno
+	fn    CommandFunc
+	orbit Orbit
 }
 
 func (cmd *command) CheckHealth() error {
@@ -21,8 +21,8 @@ func (cmd *command) Name() string {
 	return "command"
 }
 
-func (cmd *command) Init(do Dyno) error {
-	cmd.dyno = do
+func (cmd *command) Init(ob Orbit) error {
+	cmd.orbit = ob
 	return nil
 }
 
@@ -31,5 +31,5 @@ func (cmd *command) Start(ctx context.Context) error {
 }
 
 func (cmd *command) Stop(ctx context.Context) {
-	cmd.dyno.Close()
+	cmd.orbit.Close()
 }

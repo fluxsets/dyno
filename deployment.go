@@ -1,4 +1,4 @@
-package dyno
+package orbit
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 type Deployment interface {
 	health.Checker
 	Name() string
-	Init(do Dyno) error
+	Init(ob Orbit) error
 	Start(ctx context.Context) error
 	Stop(ctx context.Context)
 }

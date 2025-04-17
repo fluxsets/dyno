@@ -1,4 +1,4 @@
-module github.com/fluxsets/dyno
+module github.com/fluxsets/orbit
 
 go 1.24
 

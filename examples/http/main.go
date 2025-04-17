@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/fluxsets/dyno"
-	"github.com/fluxsets/dyno/eventbus"
-	"github.com/fluxsets/dyno/server/http"
+	"github.com/fluxsets/orbit"
+	"github.com/fluxsets/orbit/eventbus"
+	"github.com/fluxsets/orbit/server/http"
 	"gocloud.dev/pubsub"
 	"gocloud.dev/server/health"
 	"log"
@@ -12,61 +12,61 @@ import (
 )
 
 type Config struct {
-	Addr   string                      `json:"addr"`
-	PubSub map[string]dyno.TopicOption `json:"pubsub"`
+	Addr   string                       `json:"addr"`
+	PubSub map[string]orbit.TopicOption `json:"pubsub"`
 }
 
 func main() {
-	option := dyno.OptionFromFlags()
+	option := orbit.OptionFromFlags()
 	option.Name = "http-example"
 	option.Version = "v0.0.1"
-	app := dyno.NewApp(option, func(ctx context.Context, do dyno.Dyno) error {
+	app := orbit.NewApp(option, func(ctx context.Context, ob orbit.Orbit) error {
 		config := &Config{}
-		if err := do.Config().Unmarshal(config); err != nil {
+		if err := ob.Config().Unmarshal(config); err != nil {
 			return err
 		}
-		do.EventBus().Init(dyno.EventBusOption{ExternalTopics: config.PubSub})
-		opt := do.Option()
-		logger := do.Logger()
+		ob.EventBus().Init(orbit.EventBusOption{ExternalTopics: config.PubSub})
+		opt := ob.Option()
+		logger := ob.Logger()
 		logger.Info("parsed option", "option", opt)
 		logger.Info("parsed config", "config", config)
 
 		healthChecks := []health.Checker{}
 
-		do.Hooks().OnStart(func(ctx context.Context) error {
-			do.Logger().Info("on start")
+		ob.Hooks().OnStart(func(ctx context.Context) error {
+			ob.Logger().Info("on start")
 			return nil
 		})
-		if deps, err := do.DeployFromProducer(eventbus.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
+		if deps, err := ob.DeployFromProducer(eventbus.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
 			logger.Info("recv event", "message", string(msg.Body))
 			return nil
-		}), dyno.DeploymentOptions{Instances: 1}); err != nil {
+		}), orbit.DeploymentOptions{Instances: 1}); err != nil {
 			return err
 		} else {
 			for _, dep := range deps {
 				healthChecks = append(healthChecks, dep)
 			}
 		}
-		do.Hooks().OnStop(func(ctx context.Context) error {
-			do.Logger().Info("on stop")
+		ob.Hooks().OnStop(func(ctx context.Context) error {
+			ob.Logger().Info("on stop")
 			return nil
 		})
 		router := http.NewRouter()
 		router.HandleFunc("/", func(rw gohttp.ResponseWriter, r *gohttp.Request) {
 			_, _ = rw.Write([]byte("hello"))
 		})
-		if err := do.Deploy(http.NewServer(":9090", router.ServeHTTP, healthChecks, do.Logger("logger", "http-requestlog"))); err != nil {
+		if err := ob.Deploy(http.NewServer(":9090", router.ServeHTTP, healthChecks, ob.Logger("logger", "http-requestlog"))); err != nil {
 			return err
 		}
-		topic, err := do.EventBus().Topic("hello")
+		topic, err := ob.EventBus().Topic("hello")
 		if err != nil {
 			return err
 		}
 		if err := topic.Send(ctx, &pubsub.Message{
 			Body: []byte("hello"),
 			Metadata: map[string]string{
-				dyno.KeyName: "hello",
-				"from":       do.Option().ID,
+				orbit.KeyName: "hello",
+				"from":        ob.Option().ID,
 			},
 		}); err != nil {
 			logger.Info("failed to send message", "error", err)

@@ -2,7 +2,7 @@ package eventbus
 
 import (
 	"context"
-	"github.com/fluxsets/dyno"
+	"github.com/fluxsets/orbit"
 	"gocloud.dev/pubsub"
 	"log/slog"
 )
@@ -31,11 +31,11 @@ func (t TopicURI) String() string {
 
 type Subscriber struct {
 	topic   TopicURI
-	dyno    dyno.Dyno
+	orbit   orbit.Orbit
 	handler HandlerFunc
 	subs    *pubsub.Subscription
 	logger  *slog.Logger
-	dyno.HealthCheck
+	orbit.HealthCheck
 }
 
 func NewSubscriber(topic TopicURI, h HandlerFunc) *Subscriber {
@@ -45,8 +45,8 @@ func NewSubscriber(topic TopicURI, h HandlerFunc) *Subscriber {
 	}
 }
 
-func NewSubscriberProducer(topic TopicURI, h HandlerFunc) dyno.DeploymentProducer {
-	return func() dyno.Deployment {
+func NewSubscriberProducer(topic TopicURI, h HandlerFunc) orbit.DeploymentProducer {
+	return func() orbit.Deployment {
 		return NewSubscriber(topic, h)
 	}
 }
@@ -55,9 +55,9 @@ func (s *Subscriber) Name() string {
 	return "subscriber@" + s.topic.String()
 }
 
-func (s *Subscriber) Init(do dyno.Dyno) error {
-	s.dyno = do
-	s.logger = do.Logger("logger", s.Name())
+func (s *Subscriber) Init(ob orbit.Orbit) error {
+	s.orbit = ob
+	s.logger = ob.Logger("logger", s.Name())
 	return nil
 }
 
@@ -66,7 +66,7 @@ func (s *Subscriber) Start(ctx context.Context) error {
 	s.SetHealthy(true)
 
 	var err error
-	s.subs, err = s.dyno.EventBus().Subscription(s.topic.String())
+	s.subs, err = s.orbit.EventBus().Subscription(s.topic.String())
 	for {
 		var msg *pubsub.Message
 		msg, err = s.subs.Receive(ctx)
@@ -74,7 +74,7 @@ func (s *Subscriber) Start(ctx context.Context) error {
 			break
 		}
 		if err := s.handler(ctx, msg); err != nil {
-			s.dyno.Logger().Error("message handle error", "topic", s.topic, "error", err)
+			s.orbit.Logger().Error("message handle error", "topic", s.topic, "error", err)
 		}
 		msg.Ack()
 	}
@@ -84,9 +84,9 @@ func (s *Subscriber) Start(ctx context.Context) error {
 
 func (s *Subscriber) Stop(ctx context.Context) {
 	if err := s.subs.Shutdown(ctx); err != nil {
-		s.dyno.Logger().Error("subscription shutdown error", "topic", s.topic, "error", err)
+		s.orbit.Logger().Error("subscription shutdown error", "topic", s.topic, "error", err)
 	}
 	s.logger.Info("subscriber shut down")
 }
 
-var _ dyno.ServerLike = new(Subscriber)
+var _ orbit.ServerLike = new(Subscriber)

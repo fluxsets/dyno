@@ -1,4 +1,4 @@
-package dyno
+package orbit
 
 import (
 	"github.com/go-viper/mapstructure/v2"

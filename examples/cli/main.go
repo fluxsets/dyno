@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"github.com/fluxsets/dyno"
-	"github.com/fluxsets/dyno/eventbus"
+	"github.com/fluxsets/orbit"
+	"github.com/fluxsets/orbit/eventbus"
 	"gocloud.dev/pubsub"
 	"gocloud.dev/server/health"
 	"log"
@@ -11,36 +11,36 @@ import (
 )
 
 type Config struct {
-	Addr   string                      `json:"addr"`
-	PubSub map[string]dyno.TopicOption `json:"pubsub"`
+	Addr   string                       `json:"addr"`
+	PubSub map[string]orbit.TopicOption `json:"pubsub"`
 }
 
 func main() {
-	option := dyno.OptionFromFlags()
+	option := orbit.OptionFromFlags()
 	option.Name = "cli-example"
 	option.Version = "v0.0.1"
-	app := dyno.NewApp(option, func(ctx context.Context, do dyno.Dyno) error {
+	app := orbit.NewApp(option, func(ctx context.Context, ob orbit.Orbit) error {
 		config := &Config{}
-		if err := do.Config().Unmarshal(config); err != nil {
+		if err := ob.Config().Unmarshal(config); err != nil {
 			return err
 		}
-		do.EventBus().Init(dyno.EventBusOption{ExternalTopics: config.PubSub})
+		ob.EventBus().Init(orbit.EventBusOption{ExternalTopics: config.PubSub})
 
-		opt := do.Option()
-		logger := do.Logger()
+		opt := ob.Option()
+		logger := ob.Logger()
 		logger.Info("parsed option", "option", opt.String())
 		logger.Info("parsed config", "config", config)
 
-		do.Hooks().OnStart(func(ctx context.Context) error {
-			do.Logger().Info("on start")
+		ob.Hooks().OnStart(func(ctx context.Context) error {
+			ob.Logger().Info("on start")
 			return nil
 		})
 
 		healthChecks := []health.Checker{}
-		if deployments, err := do.DeployFromProducer(eventbus.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
+		if deployments, err := ob.DeployFromProducer(eventbus.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
 			logger.Info("recv event", "message", string(msg.Body))
 			return nil
-		}), dyno.DeploymentOptions{Instances: 1}); err != nil {
+		}), orbit.DeploymentOptions{Instances: 1}); err != nil {
 			return err
 		} else {
 			for _, deployment := range deployments {
@@ -48,20 +48,20 @@ func main() {
 			}
 		}
 
-		do.Hooks().OnStop(func(ctx context.Context) error {
-			do.Logger().Info("on stop")
+		ob.Hooks().OnStop(func(ctx context.Context) error {
+			ob.Logger().Info("on stop")
 			return nil
 		})
 
-		if err := do.Deploy(dyno.NewCommand(func(ctx context.Context) error {
-			topic, err := do.EventBus().Topic("hello")
+		if err := ob.Deploy(orbit.NewCommand(func(ctx context.Context) error {
+			topic, err := ob.EventBus().Topic("hello")
 			if err != nil {
 				return err
 			}
 			if err := topic.Send(ctx, &pubsub.Message{
 				Body: []byte("hello"),
 				Metadata: map[string]string{
-					dyno.KeyName: "hello",
+					orbit.KeyName: "hello",
 				},
 			}); err != nil {
 				logger.Info("failed to send message", "error", err)
