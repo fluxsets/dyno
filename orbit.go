@@ -161,7 +161,7 @@ func (ob *orbit) Hooks() Hooks {
 	return ob.hooks
 }
 
-func New(o Option) Orbit {
+func newOrbit(o Option) Orbit {
 	o.ensureDefaults()
 	ob := &orbit{
 		o:    o,

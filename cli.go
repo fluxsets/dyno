@@ -12,11 +12,11 @@ type App struct {
 	orbit Orbit
 }
 
-func NewApp(o Option, setup SetupFunc) *App {
+func New(o Option, setup SetupFunc) *App {
 	if o.ID == "" {
 		o.ID, _ = os.Hostname()
 	}
-	ob := New(o)
+	ob := newOrbit(o)
 	return &App{
 		setup: setup,
 		orbit: ob,

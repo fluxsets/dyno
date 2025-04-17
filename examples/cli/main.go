@@ -19,7 +19,7 @@ func main() {
 	option := orbit.OptionFromFlags()
 	option.Name = "cli-example"
 	option.Version = "v0.0.1"
-	app := orbit.NewApp(option, func(ctx context.Context, ob orbit.Orbit) error {
+	app := orbit.New(option, func(ctx context.Context, ob orbit.Orbit) error {
 		config := &Config{}
 		if err := ob.Config().Unmarshal(config); err != nil {
 			return err
