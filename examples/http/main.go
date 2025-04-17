@@ -31,19 +31,18 @@ func main() {
 		logger.Info("parsed option", "option", opt)
 		logger.Info("parsed config", "config", config)
 
-		healthChecks := []health.Checker{}
-
+		var healthChecks []health.Checker
 		ob.Hooks().OnStart(func(ctx context.Context) error {
 			ob.Logger().Info("on start")
 			return nil
 		})
-		if deps, err := ob.DeployFromProducer(eventbus.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
+		if deployments, err := ob.DeployFromProducer(eventbus.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
 			logger.Info("recv event", "message", string(msg.Body))
 			return nil
 		}), orbit.DeploymentOptions{Instances: 1}); err != nil {
 			return err
 		} else {
-			for _, dep := range deps {
+			for _, dep := range deployments {
 				healthChecks = append(healthChecks, dep)
 			}
 		}
