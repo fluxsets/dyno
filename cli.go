@@ -23,9 +23,15 @@ func New(o Option, setup SetupFunc) *App {
 	}
 }
 
-func (cli *App) Run() error {
-	if err := cli.setup(cli.orbit.Context(), cli.orbit); err != nil {
+func (app *App) Run() {
+	if err := app.RunE(); err != nil {
+		panic(err)
+	}
+}
+
+func (app *App) RunE() error {
+	if err := app.setup(app.orbit.Context(), app.orbit); err != nil {
 		return err
 	}
-	return cli.orbit.Run()
+	return app.orbit.Run()
 }

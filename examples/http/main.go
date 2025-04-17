@@ -73,7 +73,7 @@ func main() {
 
 		return nil
 	})
-	err := app.Run()
+	err := app.RunE()
 	if err != nil {
 		log.Fatal(err)
 	}
