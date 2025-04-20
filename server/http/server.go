@@ -40,8 +40,8 @@ func (s *Server) Name() string {
 	return "http"
 }
 
-func (s *Server) Init(hp hyper.Hyper) error {
-	s.logger = hp.Logger("deployment", s.Name())
+func (s *Server) Init(hyp hyper.Hyper) error {
+	s.logger = hyp.Logger("deployment", s.Name())
 	return nil
 }
 

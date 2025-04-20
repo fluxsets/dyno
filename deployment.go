@@ -8,7 +8,7 @@ import (
 type Deployment interface {
 	health.Checker
 	Name() string
-	Init(hp Hyper) error
+	Init(hyp Hyper) error
 	Start(ctx context.Context) error
 	Stop(ctx context.Context)
 }

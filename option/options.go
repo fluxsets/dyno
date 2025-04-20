@@ -1,4 +1,4 @@
-package hyper
+package option
 
 import (
 	"encoding/json"
@@ -25,7 +25,7 @@ func (o *Option) String() string {
 	return string(bs)
 
 }
-func (o *Option) ensureDefaults() {
+func (o *Option) EnsureDefaults() {
 	if o.ID == "" {
 		o.ID, _ = os.Hostname()
 	}
@@ -47,7 +47,7 @@ func (o *Option) KWArgsAsMap() map[string]any {
 	return kwargs
 }
 
-func OptionFromFlags() Option {
+func FromFlags() Option {
 	fs := pflag.NewFlagSet("", pflag.ExitOnError)
 	option := Option{}
 	if err := flagbind.Bind(fs, &option); err != nil {

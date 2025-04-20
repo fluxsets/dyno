@@ -2,24 +2,25 @@ package hyper
 
 import (
 	"context"
+	"github.com/fluxsets/hyper/option"
 	"os"
 )
 
-type SetupFunc func(ctx context.Context, hp Hyper) error
+type SetupFunc func(ctx context.Context, hyp Hyper) error
 
 type App struct {
 	setup SetupFunc
 	hyper Hyper
 }
 
-func New(o Option, setup SetupFunc) *App {
+func New(o option.Option, setup SetupFunc) *App {
 	if o.ID == "" {
 		o.ID, _ = os.Hostname()
 	}
-	hp := newHalo(o)
+	hyp := newHyper(o)
 	return &App{
 		setup: setup,
-		hyper: hp,
+		hyper: hyp,
 	}
 }
 

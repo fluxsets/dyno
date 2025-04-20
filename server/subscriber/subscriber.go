@@ -1,4 +1,4 @@
-package eventbus
+package subscriber
 
 import (
 	"context"
@@ -55,9 +55,9 @@ func (s *Subscriber) Name() string {
 	return "subscriber@" + s.topic.String()
 }
 
-func (s *Subscriber) Init(hp hyper.Hyper) error {
-	s.hyper = hp
-	s.logger = hp.Logger("logger", s.Name())
+func (s *Subscriber) Init(hyp hyper.Hyper) error {
+	s.hyper = hyp
+	s.logger = hyp.Logger("logger", s.Name())
 	return nil
 }
 

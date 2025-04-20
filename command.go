@@ -21,8 +21,8 @@ func (cmd *command) Name() string {
 	return "command"
 }
 
-func (cmd *command) Init(hp Hyper) error {
-	cmd.hyper = hp
+func (cmd *command) Init(hyp Hyper) error {
+	cmd.hyper = hyp
 	return nil
 }
 

@@ -1,4 +1,4 @@
-package hyper
+package eventbus
 
 import (
 	"context"
@@ -11,12 +11,12 @@ import (
 	"time"
 )
 
-type EventBusOption struct {
+type Option struct {
 	ExternalTopics map[string]TopicOption `json:"external_topics"`
 }
 
 type EventBus interface {
-	Init(o EventBusOption)
+	Init(o Option)
 	Subscription(topic string) (*pubsub.Subscription, error)
 	Topic(topic string) (*pubsub.Topic, error)
 	Close(ctx context.Context) error
@@ -39,7 +39,7 @@ type KafkaSubscription struct {
 }
 
 type pubSub struct {
-	o             EventBusOption
+	o             Option
 	mu            sync.RWMutex
 	bridgeOptions map[string]TopicOption
 	topics        map[string]*pubsub.Topic
@@ -59,7 +59,7 @@ func (ps *pubSub) Close(ctx context.Context) error {
 	return multiErr
 }
 
-func (ps *pubSub) Init(o EventBusOption) {
+func (ps *pubSub) Init(o Option) {
 	for k, o := range o.ExternalTopics {
 		ps.bridgeOptions[k] = o
 	}
@@ -156,8 +156,7 @@ func (ps *pubSub) Topic(id string) (*pubsub.Topic, error) {
 	return topic, nil
 }
 
-func newEventBus() EventBus {
-
+func New() EventBus {
 	bus := &pubSub{
 		mu:            sync.RWMutex{},
 		bridgeOptions: map[string]TopicOption{},
