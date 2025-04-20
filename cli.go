@@ -1,25 +1,25 @@
-package orbit
+package hyper
 
 import (
 	"context"
 	"os"
 )
 
-type SetupFunc func(ctx context.Context, ob Orbit) error
+type SetupFunc func(ctx context.Context, hp Hyper) error
 
 type App struct {
 	setup SetupFunc
-	orbit Orbit
+	hyper Hyper
 }
 
 func New(o Option, setup SetupFunc) *App {
 	if o.ID == "" {
 		o.ID, _ = os.Hostname()
 	}
-	ob := newOrbit(o)
+	hp := newHalo(o)
 	return &App{
 		setup: setup,
-		orbit: ob,
+		hyper: hp,
 	}
 }
 
@@ -30,8 +30,8 @@ func (app *App) Run() {
 }
 
 func (app *App) RunE() error {
-	if err := app.setup(app.orbit.Context(), app.orbit); err != nil {
+	if err := app.setup(app.hyper.Context(), app.hyper); err != nil {
 		return err
 	}
-	return app.orbit.Run()
+	return app.hyper.Run()
 }

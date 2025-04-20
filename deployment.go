@@ -1,4 +1,4 @@
-package orbit
+package hyper
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 type Deployment interface {
 	health.Checker
 	Name() string
-	Init(ob Orbit) error
+	Init(hp Hyper) error
 	Start(ctx context.Context) error
 	Stop(ctx context.Context)
 }

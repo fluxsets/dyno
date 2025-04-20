@@ -1,4 +1,4 @@
-module github.com/fluxsets/orbit
+module github.com/fluxsets/hyper
 
 go 1.24
 

@@ -1,4 +1,4 @@
-package orbit
+package hyper
 
 import "context"
 
@@ -10,7 +10,7 @@ func NewCommand(fn CommandFunc) Deployment {
 
 type command struct {
 	fn    CommandFunc
-	orbit Orbit
+	hyper Hyper
 }
 
 func (cmd *command) CheckHealth() error {
@@ -21,8 +21,8 @@ func (cmd *command) Name() string {
 	return "command"
 }
 
-func (cmd *command) Init(ob Orbit) error {
-	cmd.orbit = ob
+func (cmd *command) Init(hp Hyper) error {
+	cmd.hyper = hp
 	return nil
 }
 
@@ -31,5 +31,5 @@ func (cmd *command) Start(ctx context.Context) error {
 }
 
 func (cmd *command) Stop(ctx context.Context) {
-	cmd.orbit.Close()
+	cmd.hyper.Close()
 }

@@ -1,4 +1,4 @@
-package orbit
+package hyper
 
 import (
 	"github.com/go-viper/mapstructure/v2"

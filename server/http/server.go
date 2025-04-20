@@ -2,7 +2,7 @@ package http
 
 import (
 	"context"
-	"github.com/fluxsets/orbit"
+	"github.com/fluxsets/hyper"
 	"gocloud.dev/server"
 	"gocloud.dev/server/health"
 	"log/slog"
@@ -40,8 +40,8 @@ func (s *Server) Name() string {
 	return "http"
 }
 
-func (s *Server) Init(ob orbit.Orbit) error {
-	s.logger = ob.Logger("deployment", s.Name())
+func (s *Server) Init(hp hyper.Hyper) error {
+	s.logger = hp.Logger("deployment", s.Name())
 	return nil
 }
 
@@ -57,4 +57,4 @@ func (s *Server) Stop(ctx context.Context) {
 	}
 }
 
-var _ orbit.ServerLike = (*Server)(nil)
+var _ hyper.ServerLike = (*Server)(nil)

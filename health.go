@@ -1,4 +1,4 @@
-package orbit
+package hyper
 
 import (
 	"errors"
