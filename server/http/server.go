@@ -12,7 +12,7 @@ func NewRouter() *http.ServeMux {
 	return http.NewServeMux()
 }
 
-func NewServer(addr string, h http.Handler, healthCheck fleet.HealthChecker, logger *slog.Logger) *Server {
+func NewServer(addr string, h http.Handler, healthCheck fleet.HealthCheck, logger *slog.Logger) *Server {
 	return &Server{
 		addr:        addr,
 		handler:     h,
@@ -26,7 +26,7 @@ type Server struct {
 	addr        string
 	logger      *slog.Logger
 	handler     http.Handler
-	healthCheck fleet.HealthChecker
+	healthCheck fleet.HealthCheck
 }
 
 func (s *Server) Name() string {

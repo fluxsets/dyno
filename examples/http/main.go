@@ -52,7 +52,7 @@ func main() {
 			_, _ = rw.Write([]byte("hello"))
 		})
 
-		if err := ft.Mount(http.NewServer(":9090", router, ft.HealthChecker(), ft.Logger("logger", "http-requestlog"))); err != nil {
+		if err := ft.Mount(http.NewServer(":9090", router, ft.HealthCheck(), ft.Logger("logger", "http-requestlog"))); err != nil {
 			return err
 		}
 
