@@ -21,9 +21,9 @@ type Fleet interface {
 	Config() Config
 	Option() option.Option
 	Context() context.Context
-	DeployFromProducer(producer DeploymentProducer, options DeploymentOptions) ([]Deployment, error)
-	Deploy(deployments ...Deployment) error
-	DeployCommand(cmd CommandFunc) error
+	ComponentFromProducer(producer ComponentProducer, options ProduceOption) ([]Component, error)
+	Component(components ...Component) error
+	Command(cmd CommandFunc) error
 	Run() error
 	EventBus() eventbus.EventBus
 	Hooks() Hooks
@@ -41,8 +41,8 @@ type fleet struct {
 	c         Config
 }
 
-func (ft *fleet) DeployCommand(cmd CommandFunc) error {
-	return ft.Deploy(NewCommand(cmd))
+func (ft *fleet) Command(cmd CommandFunc) error {
+	return ft.Component(NewCommand(cmd))
 }
 
 func (ft *fleet) Close() {
@@ -87,14 +87,14 @@ func (ft *fleet) initConfig() {
 	ft.c.Merge(ft.o.KWArgsAsMap())
 }
 
-func (ft *fleet) DeployFromProducer(producer DeploymentProducer, options DeploymentOptions) ([]Deployment, error) {
+func (ft *fleet) ComponentFromProducer(producer ComponentProducer, options ProduceOption) ([]Component, error) {
 	options.ensureDefaults()
-	var deployments []Deployment
+	var components []Component
 	for i := 0; i < options.Instances; i++ {
 		dep := producer()
-		deployments = append(deployments, dep)
+		components = append(components, dep)
 	}
-	return deployments, ft.Deploy(deployments...)
+	return components, ft.Component(components...)
 }
 
 func (ft *fleet) Config() Config {
@@ -113,8 +113,8 @@ func (ft *fleet) Option() option.Option {
 	return ft.o
 }
 
-func (ft *fleet) Deploy(deployments ...Deployment) error {
-	for _, dep := range deployments {
+func (ft *fleet) Component(components ...Component) error {
+	for _, dep := range components {
 		ctx, cancel := context.WithCancel(context.Background())
 		if err := dep.Init(ft); err != nil {
 			cancel()

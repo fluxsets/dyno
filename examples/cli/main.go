@@ -39,14 +39,14 @@ func main() {
 		})
 
 		var healthChecks []health.Checker
-		if deployments, err := ft.DeployFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
+		if components, err := ft.ComponentFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
 			logger.Info("recv event", "message", string(msg.Body))
 			return nil
-		}), fleet.DeploymentOptions{Instances: 1}); err != nil {
+		}), fleet.ProduceOption{Instances: 1}); err != nil {
 			return err
 		} else {
-			for _, deployment := range deployments {
-				healthChecks = append(healthChecks, deployment)
+			for _, component := range components {
+				healthChecks = append(healthChecks, component)
 			}
 		}
 
@@ -55,7 +55,7 @@ func main() {
 			return nil
 		})
 
-		if err := ft.DeployCommand(func(ctx context.Context) error {
+		if err := ft.Command(func(ctx context.Context) error {
 			topic, err := ft.EventBus().Topic("hello")
 			if err != nil {
 				return err

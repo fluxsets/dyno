@@ -41,7 +41,7 @@ func (s *Server) Name() string {
 }
 
 func (s *Server) Init(ft fleet.Fleet) error {
-	s.logger = ft.Logger("deployment", s.Name())
+	s.logger = ft.Logger("component", s.Name())
 	return nil
 }
 

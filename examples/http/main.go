@@ -39,13 +39,13 @@ func main() {
 			ft.Logger().Info("on start")
 			return nil
 		})
-		if deployments, err := ft.DeployFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
+		if components, err := ft.ComponentFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
 			logger.Info("recv event", "message", string(msg.Body))
 			return nil
-		}), fleet.DeploymentOptions{Instances: 1}); err != nil {
+		}), fleet.ProduceOption{Instances: 1}); err != nil {
 			return err
 		} else {
-			for _, dep := range deployments {
+			for _, dep := range components {
 				healthChecks = append(healthChecks, dep)
 			}
 		}
@@ -57,7 +57,7 @@ func main() {
 		router.HandleFunc("/", func(rw gohttp.ResponseWriter, r *gohttp.Request) {
 			_, _ = rw.Write([]byte("hello"))
 		})
-		if err := ft.Deploy(http.NewServer(":9090", router.ServeHTTP, healthChecks, ft.Logger("logger", "http-requestlog"))); err != nil {
+		if err := ft.Component(http.NewServer(":9090", router.ServeHTTP, healthChecks, ft.Logger("logger", "http-requestlog"))); err != nil {
 			return err
 		}
 

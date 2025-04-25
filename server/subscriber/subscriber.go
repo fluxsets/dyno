@@ -45,8 +45,8 @@ func NewSubscriber(topic TopicURI, h HandlerFunc) *Subscriber {
 	}
 }
 
-func NewSubscriberProducer(topic TopicURI, h HandlerFunc) fleet.DeploymentProducer {
-	return func() fleet.Deployment {
+func NewSubscriberProducer(topic TopicURI, h HandlerFunc) fleet.ComponentProducer {
+	return func() fleet.Component {
 		return NewSubscriber(topic, h)
 	}
 }

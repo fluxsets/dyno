@@ -5,7 +5,7 @@ import (
 	"gocloud.dev/server/health"
 )
 
-type Deployment interface {
+type Component interface {
 	health.Checker
 	Name() string
 	Init(ft Fleet) error
@@ -13,20 +13,20 @@ type Deployment interface {
 	Stop(ctx context.Context)
 }
 
-type DeploymentOptions struct {
+type ProduceOption struct {
 	Instances int `json:"instances"` // 实例数
 }
 
-func (o *DeploymentOptions) ensureDefaults() {
+func (o *ProduceOption) ensureDefaults() {
 	if o.Instances == 0 {
 		o.Instances = 1
 	}
 }
 
-type DeploymentProducer func() Deployment
+type ComponentProducer func() Component
 
-type DeploymentSet []Deployment
+type ComponentSet []Component
 
 type ServerLike interface {
-	Deployment
+	Component
 }
