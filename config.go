@@ -1,4 +1,4 @@
-package hyper
+package fleet
 
 import (
 	"github.com/go-viper/mapstructure/v2"

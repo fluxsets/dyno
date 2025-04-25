@@ -2,7 +2,7 @@ package subscriber
 
 import (
 	"context"
-	"github.com/fluxsets/hyper"
+	"github.com/fluxsets/fleet"
 	"gocloud.dev/pubsub"
 	"log/slog"
 )
@@ -31,11 +31,11 @@ func (t TopicURI) String() string {
 
 type Subscriber struct {
 	topic   TopicURI
-	hyper   hyper.Hyper
+	fleet   fleet.Fleet
 	handler HandlerFunc
 	subs    *pubsub.Subscription
 	logger  *slog.Logger
-	hyper.HealthCheck
+	fleet.HealthCheck
 }
 
 func NewSubscriber(topic TopicURI, h HandlerFunc) *Subscriber {
@@ -45,8 +45,8 @@ func NewSubscriber(topic TopicURI, h HandlerFunc) *Subscriber {
 	}
 }
 
-func NewSubscriberProducer(topic TopicURI, h HandlerFunc) hyper.DeploymentProducer {
-	return func() hyper.Deployment {
+func NewSubscriberProducer(topic TopicURI, h HandlerFunc) fleet.DeploymentProducer {
+	return func() fleet.Deployment {
 		return NewSubscriber(topic, h)
 	}
 }
@@ -55,9 +55,9 @@ func (s *Subscriber) Name() string {
 	return "subscriber@" + s.topic.String()
 }
 
-func (s *Subscriber) Init(hyp hyper.Hyper) error {
-	s.hyper = hyp
-	s.logger = hyp.Logger("logger", s.Name())
+func (s *Subscriber) Init(flt fleet.Fleet) error {
+	s.fleet = flt
+	s.logger = flt.Logger("logger", s.Name())
 	return nil
 }
 
@@ -66,7 +66,7 @@ func (s *Subscriber) Start(ctx context.Context) error {
 	s.SetHealthy(true)
 
 	var err error
-	s.subs, err = s.hyper.EventBus().Subscription(s.topic.String())
+	s.subs, err = s.fleet.EventBus().Subscription(s.topic.String())
 	for {
 		var msg *pubsub.Message
 		msg, err = s.subs.Receive(ctx)
@@ -74,7 +74,7 @@ func (s *Subscriber) Start(ctx context.Context) error {
 			break
 		}
 		if err := s.handler(ctx, msg); err != nil {
-			s.hyper.Logger().Error("message handle error", "topic", s.topic, "error", err)
+			s.fleet.Logger().Error("message handle error", "topic", s.topic, "error", err)
 		}
 		msg.Ack()
 	}
@@ -84,9 +84,9 @@ func (s *Subscriber) Start(ctx context.Context) error {
 
 func (s *Subscriber) Stop(ctx context.Context) {
 	if err := s.subs.Shutdown(ctx); err != nil {
-		s.hyper.Logger().Error("subscription shutdown error", "topic", s.topic, "error", err)
+		s.fleet.Logger().Error("subscription shutdown error", "topic", s.topic, "error", err)
 	}
 	s.logger.Info("subscriber shut down")
 }
 
-var _ hyper.ServerLike = new(Subscriber)
+var _ fleet.ServerLike = new(Subscriber)

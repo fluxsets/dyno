@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"github.com/fluxsets/hyper"
-	"github.com/fluxsets/hyper/eventbus"
-	"github.com/fluxsets/hyper/option"
-	"github.com/fluxsets/hyper/server/subscriber"
+	"github.com/fluxsets/fleet"
+	"github.com/fluxsets/fleet/eventbus"
+	"github.com/fluxsets/fleet/option"
+	"github.com/fluxsets/fleet/server/subscriber"
 	"gocloud.dev/pubsub"
 	"gocloud.dev/server/health"
 	"log"
@@ -21,28 +21,28 @@ func main() {
 	opt := option.FromFlags()
 	opt.Name = "cli-example"
 	opt.Version = "v0.0.1"
-	app := hyper.New(opt, func(ctx context.Context, hyp hyper.Hyper) error {
+	app := fleet.New(opt, func(ctx context.Context, flt fleet.Fleet) error {
 		config := &Config{}
-		if err := hyp.Config().Unmarshal(config); err != nil {
+		if err := flt.Config().Unmarshal(config); err != nil {
 			return err
 		}
-		hyp.EventBus().Init(eventbus.Option{ExternalTopics: config.PubSub})
+		flt.EventBus().Init(eventbus.Option{ExternalTopics: config.PubSub})
 
-		opt := hyp.Option()
-		logger := hyp.Logger()
+		opt := flt.Option()
+		logger := flt.Logger()
 		logger.Info("parsed option", "option", opt.String())
 		logger.Info("parsed config", "config", config)
 
-		hyp.Hooks().OnStart(func(ctx context.Context) error {
-			hyp.Logger().Info("on start")
+		flt.Hooks().OnStart(func(ctx context.Context) error {
+			flt.Logger().Info("on start")
 			return nil
 		})
 
 		var healthChecks []health.Checker
-		if deployments, err := hyp.DeployFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
+		if deployments, err := flt.DeployFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
 			logger.Info("recv event", "message", string(msg.Body))
 			return nil
-		}), hyper.DeploymentOptions{Instances: 1}); err != nil {
+		}), fleet.DeploymentOptions{Instances: 1}); err != nil {
 			return err
 		} else {
 			for _, deployment := range deployments {
@@ -50,13 +50,13 @@ func main() {
 			}
 		}
 
-		hyp.Hooks().OnStop(func(ctx context.Context) error {
-			hyp.Logger().Info("on stop")
+		flt.Hooks().OnStop(func(ctx context.Context) error {
+			flt.Logger().Info("on stop")
 			return nil
 		})
 
-		if err := hyp.DeployCommand(func(ctx context.Context) error {
-			topic, err := hyp.EventBus().Topic("hello")
+		if err := flt.DeployCommand(func(ctx context.Context) error {
+			topic, err := flt.EventBus().Topic("hello")
 			if err != nil {
 				return err
 			}

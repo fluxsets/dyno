@@ -1,4 +1,4 @@
-module github.com/fluxsets/hyper
+module github.com/fluxsets/fleet
 
 go 1.24
 

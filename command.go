@@ -1,4 +1,4 @@
-package hyper
+package fleet
 
 import "context"
 
@@ -10,7 +10,7 @@ func NewCommand(fn CommandFunc) Deployment {
 
 type command struct {
 	fn    CommandFunc
-	hyper Hyper
+	fleet Fleet
 }
 
 func (cmd *command) CheckHealth() error {
@@ -21,8 +21,8 @@ func (cmd *command) Name() string {
 	return "command"
 }
 
-func (cmd *command) Init(hyp Hyper) error {
-	cmd.hyper = hyp
+func (cmd *command) Init(flt Fleet) error {
+	cmd.fleet = flt
 	return nil
 }
 
@@ -31,5 +31,5 @@ func (cmd *command) Start(ctx context.Context) error {
 }
 
 func (cmd *command) Stop(ctx context.Context) {
-	cmd.hyper.Close()
+	cmd.fleet.Close()
 }

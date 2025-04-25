@@ -1,4 +1,4 @@
-package hyper
+package fleet
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 type Deployment interface {
 	health.Checker
 	Name() string
-	Init(hyp Hyper) error
+	Init(flt Fleet) error
 	Start(ctx context.Context) error
 	Stop(ctx context.Context)
 }

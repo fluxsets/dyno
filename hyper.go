@@ -1,9 +1,9 @@
-package hyper
+package fleet
 
 import (
 	"context"
-	"github.com/fluxsets/hyper/eventbus"
-	"github.com/fluxsets/hyper/option"
+	"github.com/fluxsets/fleet/eventbus"
+	"github.com/fluxsets/fleet/option"
 	"github.com/oklog/run"
 	slogzap "github.com/samber/slog-zap/v2"
 	"go.uber.org/zap"
@@ -15,7 +15,7 @@ import (
 	"syscall"
 )
 
-type Hyper interface {
+type Fleet interface {
 	Init() error
 	Close()
 	Config() Config
@@ -30,7 +30,7 @@ type Hyper interface {
 	Logger(args ...any) *slog.Logger
 }
 
-type hyper struct {
+type fleet struct {
 	ctx       context.Context
 	cancelCtx context.CancelFunc
 	o         option.Option
@@ -41,31 +41,31 @@ type hyper struct {
 	c         Config
 }
 
-func (hyp *hyper) DeployCommand(cmd CommandFunc) error {
-	return hyp.Deploy(NewCommand(cmd))
+func (flt *fleet) DeployCommand(cmd CommandFunc) error {
+	return flt.Deploy(NewCommand(cmd))
 }
 
-func (hyp *hyper) Close() {
-	hyp.cancelCtx()
+func (flt *fleet) Close() {
+	flt.cancelCtx()
 }
 
-func (hyp *hyper) Init() error {
-	hyp.initConfig()
-	hyp.initLogger()
-	hyp.hooks.OnStop(func(ctx context.Context) error {
-		return hyp.EventBus().Close(ctx)
+func (flt *fleet) Init() error {
+	flt.initConfig()
+	flt.initLogger()
+	flt.hooks.OnStop(func(ctx context.Context) error {
+		return flt.EventBus().Close(ctx)
 	})
 	return nil
 }
 
-func (hyp *hyper) initLogger() {
+func (flt *fleet) initLogger() {
 	level := slog.LevelDebug
 	atomicLevel := zap.NewAtomicLevel()
 
 	zapLevel := zap.DebugLevel
-	if hyp.o.LogLevel != "" {
-		_ = level.UnmarshalText([]byte(hyp.o.LogLevel))
-		_ = zapLevel.UnmarshalText([]byte(hyp.o.LogLevel))
+	if flt.o.LogLevel != "" {
+		_ = level.UnmarshalText([]byte(flt.o.LogLevel))
+		_ = zapLevel.UnmarshalText([]byte(flt.o.LogLevel))
 	}
 	atomicLevel.SetLevel(zapLevel)
 
@@ -75,52 +75,52 @@ func (hyp *hyper) initLogger() {
 	zapLogger, _ := zapConfig.Build()
 	slog.SetLogLoggerLevel(level)
 	logger := slog.New(slogzap.Option{Level: level, Logger: zapLogger}.NewZapHandler())
-	logger = logger.With("version", hyp.o.Version, "service_name", hyp.o.Name, "service_id", hyp.o.ID)
+	logger = logger.With("version", flt.o.Version, "service_name", flt.o.Name, "service_id", flt.o.ID)
 	slog.SetDefault(logger)
-	hyp.logger = logger
+	flt.logger = logger
 }
 
-func (hyp *hyper) initConfig() {
-	configPaths := strings.Split(hyp.o.Conf, ",")
+func (flt *fleet) initConfig() {
+	configPaths := strings.Split(flt.o.Conf, ",")
 
-	hyp.c = newConfig(configPaths, []string{"yaml"})
-	hyp.c.Merge(hyp.o.KWArgsAsMap())
+	flt.c = newConfig(configPaths, []string{"yaml"})
+	flt.c.Merge(flt.o.KWArgsAsMap())
 }
 
-func (hyp *hyper) DeployFromProducer(producer DeploymentProducer, options DeploymentOptions) ([]Deployment, error) {
+func (flt *fleet) DeployFromProducer(producer DeploymentProducer, options DeploymentOptions) ([]Deployment, error) {
 	options.ensureDefaults()
 	var deployments []Deployment
 	for i := 0; i < options.Instances; i++ {
 		dep := producer()
 		deployments = append(deployments, dep)
 	}
-	return deployments, hyp.Deploy(deployments...)
+	return deployments, flt.Deploy(deployments...)
 }
 
-func (hyp *hyper) Config() Config {
-	return hyp.c
+func (flt *fleet) Config() Config {
+	return flt.c
 }
 
-func (hyp *hyper) Logger(args ...any) *slog.Logger {
-	return hyp.logger.With(args...)
+func (flt *fleet) Logger(args ...any) *slog.Logger {
+	return flt.logger.With(args...)
 }
 
-func (hyp *hyper) Context() context.Context {
-	return hyp.ctx
+func (flt *fleet) Context() context.Context {
+	return flt.ctx
 }
 
-func (hyp *hyper) Option() option.Option {
-	return hyp.o
+func (flt *fleet) Option() option.Option {
+	return flt.o
 }
 
-func (hyp *hyper) Deploy(deployments ...Deployment) error {
+func (flt *fleet) Deploy(deployments ...Deployment) error {
 	for _, dep := range deployments {
 		ctx, cancel := context.WithCancel(context.Background())
-		if err := dep.Init(hyp); err != nil {
+		if err := dep.Init(flt); err != nil {
 			cancel()
 			return err
 		}
-		hyp.runG.Add(func() error {
+		flt.runG.Add(func() error {
 			return dep.Start(ctx)
 		}, func(err error) {
 			dep.Stop(ctx)
@@ -130,58 +130,58 @@ func (hyp *hyper) Deploy(deployments ...Deployment) error {
 	return nil
 }
 
-func (hyp *hyper) Run() error {
-	hyp.Logger().Info("starting")
-	hyp.runG.Add(func() error {
-		hyp.Logger().Info("calling on start hooks")
-		for _, fn := range hyp.hooks.onStarts {
-			if err := fn(hyp.ctx); err != nil {
+func (flt *fleet) Run() error {
+	flt.Logger().Info("starting")
+	flt.runG.Add(func() error {
+		flt.Logger().Info("calling on start hooks")
+		for _, fn := range flt.hooks.onStarts {
+			if err := fn(flt.ctx); err != nil {
 				return err
 			}
 		}
 		select {
-		case <-hyp.ctx.Done():
+		case <-flt.ctx.Done():
 			return nil
 		}
 	}, func(err error) {
-		hyp.Close()
+		flt.Close()
 	})
 
-	hyp.runG.Add(func() error {
+	flt.runG.Add(func() error {
 		exit := make(chan os.Signal, 1)
 		signal.Notify(exit, syscall.SIGINT, syscall.SIGTERM)
 		select {
-		case <-hyp.ctx.Done():
+		case <-flt.ctx.Done():
 			return nil
 		case <-exit:
 			return nil
 		}
 	}, func(err error) {
-		hyp.Logger().Info("shutting down")
-		ctx, cancelCtx := context.WithTimeout(context.TODO(), hyp.o.ShutdownTimeout)
+		flt.Logger().Info("shutting down")
+		ctx, cancelCtx := context.WithTimeout(context.TODO(), flt.o.ShutdownTimeout)
 		defer cancelCtx()
-		hyp.Logger().Info("calling on stop hooks")
-		for _, fn := range hyp.hooks.onStops {
+		flt.Logger().Info("calling on stop hooks")
+		for _, fn := range flt.hooks.onStops {
 			fn := fn
 			if err := fn(ctx); err != nil {
-				hyp.logger.ErrorContext(hyp.ctx, "post stop func called error", "error", err)
+				flt.logger.ErrorContext(flt.ctx, "post stop func called error", "error", err)
 			}
 		}
 	})
-	return hyp.runG.Run()
+	return flt.runG.Run()
 }
 
-func (hyp *hyper) EventBus() eventbus.EventBus {
-	return hyp.eventBus
+func (flt *fleet) EventBus() eventbus.EventBus {
+	return flt.eventBus
 }
 
-func (hyp *hyper) Hooks() Hooks {
-	return hyp.hooks
+func (flt *fleet) Hooks() Hooks {
+	return flt.hooks
 }
 
-func newHyper(o option.Option) Hyper {
+func newHyper(o option.Option) Fleet {
 	o.EnsureDefaults()
-	hyp := &hyper{
+	flt := &fleet{
 		o:    o,
 		runG: &run.Group{},
 		hooks: &hooks{
@@ -190,9 +190,9 @@ func newHyper(o option.Option) Hyper {
 		},
 		eventBus: eventbus.New(),
 	}
-	hyp.ctx, hyp.cancelCtx = context.WithCancel(context.Background())
-	if err := hyp.Init(); err != nil {
+	flt.ctx, flt.cancelCtx = context.WithCancel(context.Background())
+	if err := flt.Init(); err != nil {
 		log.Fatal(err)
 	}
-	return hyp
+	return flt
 }

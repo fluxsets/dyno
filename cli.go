@@ -1,26 +1,26 @@
-package hyper
+package fleet
 
 import (
 	"context"
-	"github.com/fluxsets/hyper/option"
+	"github.com/fluxsets/fleet/option"
 	"os"
 )
 
-type SetupFunc func(ctx context.Context, hyp Hyper) error
+type SetupFunc func(ctx context.Context, flt Fleet) error
 
 type App struct {
 	setup SetupFunc
-	hyper Hyper
+	fleet Fleet
 }
 
 func New(o option.Option, setup SetupFunc) *App {
 	if o.ID == "" {
 		o.ID, _ = os.Hostname()
 	}
-	hyp := newHyper(o)
+	flt := newHyper(o)
 	return &App{
 		setup: setup,
-		hyper: hyp,
+		fleet: flt,
 	}
 }
 
@@ -31,8 +31,8 @@ func (app *App) Run() {
 }
 
 func (app *App) RunE() error {
-	if err := app.setup(app.hyper.Context(), app.hyper); err != nil {
+	if err := app.setup(app.fleet.Context(), app.fleet); err != nil {
 		return err
 	}
-	return app.hyper.Run()
+	return app.fleet.Run()
 }
