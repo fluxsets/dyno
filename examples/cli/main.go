@@ -7,7 +7,6 @@ import (
 	"github.com/fluxsets/fleet/option"
 	"github.com/fluxsets/fleet/server/subscriber"
 	"gocloud.dev/pubsub"
-	"gocloud.dev/server/health"
 	"log"
 	"time"
 )
@@ -38,16 +37,11 @@ func main() {
 			return nil
 		})
 
-		var healthChecks []health.Checker
-		if components, err := ft.ComponentFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
+		if _, err := ft.ComponentFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
 			logger.Info("recv event", "message", string(msg.Body))
 			return nil
 		}, 1)); err != nil {
 			return err
-		} else {
-			for _, component := range components {
-				healthChecks = append(healthChecks, component)
-			}
 		}
 
 		ft.Hooks().OnStop(func(ctx context.Context) error {

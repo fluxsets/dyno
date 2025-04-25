@@ -6,7 +6,6 @@ import (
 )
 
 type Component interface {
-	health.Checker
 	Name() string
 	Init(ft Fleet) error
 	Start(ctx context.Context) error
@@ -31,5 +30,8 @@ func (o *ProduceOption) ensureDefaults() {
 type ComponentSet []Component
 
 type ServerLike interface {
+	health.Checker
 	Component
 }
+
+type HealthCheckerRetriever func() []health.Checker

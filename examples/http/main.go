@@ -8,7 +8,6 @@ import (
 	"github.com/fluxsets/fleet/server/http"
 	"github.com/fluxsets/fleet/server/subscriber"
 	"gocloud.dev/pubsub"
-	"gocloud.dev/server/health"
 	"log"
 	gohttp "net/http"
 	"time"
@@ -34,20 +33,15 @@ func main() {
 		logger.Info("parsed option", "option", opt)
 		logger.Info("parsed config", "config", config)
 
-		var healthChecks []health.Checker
 		ft.Hooks().OnStart(func(ctx context.Context) error {
 			ft.Logger().Info("on start")
 			return nil
 		})
-		if components, err := ft.ComponentFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
+		if _, err := ft.ComponentFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
 			logger.Info("recv event", "message", string(msg.Body))
 			return nil
 		}, 1)); err != nil {
 			return err
-		} else {
-			for _, dep := range components {
-				healthChecks = append(healthChecks, dep)
-			}
 		}
 		ft.Hooks().OnStop(func(ctx context.Context) error {
 			ft.Logger().Info("on stop")
@@ -57,7 +51,8 @@ func main() {
 		router.HandleFunc("/", func(rw gohttp.ResponseWriter, r *gohttp.Request) {
 			_, _ = rw.Write([]byte("hello"))
 		})
-		if err := ft.Component(http.NewServer(":9090", router.ServeHTTP, healthChecks, ft.Logger("logger", "http-requestlog"))); err != nil {
+
+		if err := ft.Component(http.NewServer(":9090", router, ft.HealthCheck(), ft.Logger("logger", "http-requestlog"))); err != nil {
 			return err
 		}
 

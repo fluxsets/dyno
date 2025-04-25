@@ -7,6 +7,7 @@ import (
 	"github.com/oklog/run"
 	slogzap "github.com/samber/slog-zap/v2"
 	"go.uber.org/zap"
+	"gocloud.dev/server/health"
 	"log"
 	"log/slog"
 	"os"
@@ -24,6 +25,7 @@ type Fleet interface {
 	ComponentFromProducer(producer ComponentProducer) ([]Component, error)
 	Component(components ...Component) error
 	Command(cmd CommandFunc) error
+	HealthCheck() HealthCheckerRetriever
 	Run() error
 	EventBus() eventbus.EventBus
 	Hooks() Hooks
@@ -31,14 +33,21 @@ type Fleet interface {
 }
 
 type fleet struct {
-	ctx       context.Context
-	cancelCtx context.CancelFunc
-	o         option.Option
-	runG      *run.Group
-	eventBus  eventbus.EventBus
-	hooks     *hooks
-	logger    *slog.Logger
-	c         Configurer
+	ctx          context.Context
+	cancelCtx    context.CancelFunc
+	o            option.Option
+	runG         *run.Group
+	eventBus     eventbus.EventBus
+	hooks        *hooks
+	logger       *slog.Logger
+	c            Configurer
+	healthChecks []health.Checker
+}
+
+func (ft *fleet) HealthCheck() HealthCheckerRetriever {
+	return func() []health.Checker {
+		return ft.healthChecks
+	}
 }
 
 func (ft *fleet) Command(cmd CommandFunc) error {
@@ -129,18 +138,21 @@ func (ft *fleet) O() *option.Option {
 }
 
 func (ft *fleet) Component(components ...Component) error {
-	for _, dep := range components {
+	for _, comp := range components {
 		ctx, cancel := context.WithCancel(context.Background())
-		if err := dep.Init(ft); err != nil {
+		if err := comp.Init(ft); err != nil {
 			cancel()
 			return err
 		}
 		ft.runG.Add(func() error {
-			return dep.Start(ctx)
+			return comp.Start(ctx)
 		}, func(err error) {
-			dep.Stop(ctx)
+			comp.Stop(ctx)
 			cancel()
 		})
+		if hc, ok := comp.(health.Checker); ok {
+			ft.healthChecks = append(ft.healthChecks, hc)
+		}
 	}
 	return nil
 }
