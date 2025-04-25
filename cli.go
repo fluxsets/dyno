@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-type SetupFunc func(ctx context.Context, flt Fleet) error
+type SetupFunc func(ctx context.Context, ft Fleet) error
 
 type App struct {
 	setup SetupFunc
@@ -17,10 +17,10 @@ func New(o option.Option, setup SetupFunc) *App {
 	if o.ID == "" {
 		o.ID, _ = os.Hostname()
 	}
-	flt := newHyper(o)
+	ft := newHyper(o)
 	return &App{
 		setup: setup,
-		fleet: flt,
+		fleet: ft,
 	}
 }
 

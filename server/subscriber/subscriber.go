@@ -55,9 +55,9 @@ func (s *Subscriber) Name() string {
 	return "subscriber@" + s.topic.String()
 }
 
-func (s *Subscriber) Init(flt fleet.Fleet) error {
-	s.fleet = flt
-	s.logger = flt.Logger("logger", s.Name())
+func (s *Subscriber) Init(ft fleet.Fleet) error {
+	s.fleet = ft
+	s.logger = ft.Logger("logger", s.Name())
 	return nil
 }
 

@@ -8,7 +8,7 @@ import (
 type Deployment interface {
 	health.Checker
 	Name() string
-	Init(flt Fleet) error
+	Init(ft Fleet) error
 	Start(ctx context.Context) error
 	Stop(ctx context.Context)
 }

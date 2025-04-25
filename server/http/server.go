@@ -40,8 +40,8 @@ func (s *Server) Name() string {
 	return "http"
 }
 
-func (s *Server) Init(flt fleet.Fleet) error {
-	s.logger = flt.Logger("deployment", s.Name())
+func (s *Server) Init(ft fleet.Fleet) error {
+	s.logger = ft.Logger("deployment", s.Name())
 	return nil
 }
 

@@ -21,8 +21,8 @@ func (cmd *command) Name() string {
 	return "command"
 }
 
-func (cmd *command) Init(flt Fleet) error {
-	cmd.fleet = flt
+func (cmd *command) Init(ft Fleet) error {
+	cmd.fleet = ft
 	return nil
 }
 

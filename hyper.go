@@ -41,31 +41,31 @@ type fleet struct {
 	c         Config
 }
 
-func (flt *fleet) DeployCommand(cmd CommandFunc) error {
-	return flt.Deploy(NewCommand(cmd))
+func (ft *fleet) DeployCommand(cmd CommandFunc) error {
+	return ft.Deploy(NewCommand(cmd))
 }
 
-func (flt *fleet) Close() {
-	flt.cancelCtx()
+func (ft *fleet) Close() {
+	ft.cancelCtx()
 }
 
-func (flt *fleet) Init() error {
-	flt.initConfig()
-	flt.initLogger()
-	flt.hooks.OnStop(func(ctx context.Context) error {
-		return flt.EventBus().Close(ctx)
+func (ft *fleet) Init() error {
+	ft.initConfig()
+	ft.initLogger()
+	ft.hooks.OnStop(func(ctx context.Context) error {
+		return ft.EventBus().Close(ctx)
 	})
 	return nil
 }
 
-func (flt *fleet) initLogger() {
+func (ft *fleet) initLogger() {
 	level := slog.LevelDebug
 	atomicLevel := zap.NewAtomicLevel()
 
 	zapLevel := zap.DebugLevel
-	if flt.o.LogLevel != "" {
-		_ = level.UnmarshalText([]byte(flt.o.LogLevel))
-		_ = zapLevel.UnmarshalText([]byte(flt.o.LogLevel))
+	if ft.o.LogLevel != "" {
+		_ = level.UnmarshalText([]byte(ft.o.LogLevel))
+		_ = zapLevel.UnmarshalText([]byte(ft.o.LogLevel))
 	}
 	atomicLevel.SetLevel(zapLevel)
 
@@ -75,52 +75,52 @@ func (flt *fleet) initLogger() {
 	zapLogger, _ := zapConfig.Build()
 	slog.SetLogLoggerLevel(level)
 	logger := slog.New(slogzap.Option{Level: level, Logger: zapLogger}.NewZapHandler())
-	logger = logger.With("version", flt.o.Version, "service_name", flt.o.Name, "service_id", flt.o.ID)
+	logger = logger.With("version", ft.o.Version, "service_name", ft.o.Name, "service_id", ft.o.ID)
 	slog.SetDefault(logger)
-	flt.logger = logger
+	ft.logger = logger
 }
 
-func (flt *fleet) initConfig() {
-	configPaths := strings.Split(flt.o.Conf, ",")
+func (ft *fleet) initConfig() {
+	configPaths := strings.Split(ft.o.Conf, ",")
 
-	flt.c = newConfig(configPaths, []string{"yaml"})
-	flt.c.Merge(flt.o.KWArgsAsMap())
+	ft.c = newConfig(configPaths, []string{"yaml"})
+	ft.c.Merge(ft.o.KWArgsAsMap())
 }
 
-func (flt *fleet) DeployFromProducer(producer DeploymentProducer, options DeploymentOptions) ([]Deployment, error) {
+func (ft *fleet) DeployFromProducer(producer DeploymentProducer, options DeploymentOptions) ([]Deployment, error) {
 	options.ensureDefaults()
 	var deployments []Deployment
 	for i := 0; i < options.Instances; i++ {
 		dep := producer()
 		deployments = append(deployments, dep)
 	}
-	return deployments, flt.Deploy(deployments...)
+	return deployments, ft.Deploy(deployments...)
 }
 
-func (flt *fleet) Config() Config {
-	return flt.c
+func (ft *fleet) Config() Config {
+	return ft.c
 }
 
-func (flt *fleet) Logger(args ...any) *slog.Logger {
-	return flt.logger.With(args...)
+func (ft *fleet) Logger(args ...any) *slog.Logger {
+	return ft.logger.With(args...)
 }
 
-func (flt *fleet) Context() context.Context {
-	return flt.ctx
+func (ft *fleet) Context() context.Context {
+	return ft.ctx
 }
 
-func (flt *fleet) Option() option.Option {
-	return flt.o
+func (ft *fleet) Option() option.Option {
+	return ft.o
 }
 
-func (flt *fleet) Deploy(deployments ...Deployment) error {
+func (ft *fleet) Deploy(deployments ...Deployment) error {
 	for _, dep := range deployments {
 		ctx, cancel := context.WithCancel(context.Background())
-		if err := dep.Init(flt); err != nil {
+		if err := dep.Init(ft); err != nil {
 			cancel()
 			return err
 		}
-		flt.runG.Add(func() error {
+		ft.runG.Add(func() error {
 			return dep.Start(ctx)
 		}, func(err error) {
 			dep.Stop(ctx)
@@ -130,58 +130,58 @@ func (flt *fleet) Deploy(deployments ...Deployment) error {
 	return nil
 }
 
-func (flt *fleet) Run() error {
-	flt.Logger().Info("starting")
-	flt.runG.Add(func() error {
-		flt.Logger().Info("calling on start hooks")
-		for _, fn := range flt.hooks.onStarts {
-			if err := fn(flt.ctx); err != nil {
+func (ft *fleet) Run() error {
+	ft.Logger().Info("starting")
+	ft.runG.Add(func() error {
+		ft.Logger().Info("calling on start hooks")
+		for _, fn := range ft.hooks.onStarts {
+			if err := fn(ft.ctx); err != nil {
 				return err
 			}
 		}
 		select {
-		case <-flt.ctx.Done():
+		case <-ft.ctx.Done():
 			return nil
 		}
 	}, func(err error) {
-		flt.Close()
+		ft.Close()
 	})
 
-	flt.runG.Add(func() error {
+	ft.runG.Add(func() error {
 		exit := make(chan os.Signal, 1)
 		signal.Notify(exit, syscall.SIGINT, syscall.SIGTERM)
 		select {
-		case <-flt.ctx.Done():
+		case <-ft.ctx.Done():
 			return nil
 		case <-exit:
 			return nil
 		}
 	}, func(err error) {
-		flt.Logger().Info("shutting down")
-		ctx, cancelCtx := context.WithTimeout(context.TODO(), flt.o.ShutdownTimeout)
+		ft.Logger().Info("shutting down")
+		ctx, cancelCtx := context.WithTimeout(context.TODO(), ft.o.ShutdownTimeout)
 		defer cancelCtx()
-		flt.Logger().Info("calling on stop hooks")
-		for _, fn := range flt.hooks.onStops {
+		ft.Logger().Info("calling on stop hooks")
+		for _, fn := range ft.hooks.onStops {
 			fn := fn
 			if err := fn(ctx); err != nil {
-				flt.logger.ErrorContext(flt.ctx, "post stop func called error", "error", err)
+				ft.logger.ErrorContext(ft.ctx, "post stop func called error", "error", err)
 			}
 		}
 	})
-	return flt.runG.Run()
+	return ft.runG.Run()
 }
 
-func (flt *fleet) EventBus() eventbus.EventBus {
-	return flt.eventBus
+func (ft *fleet) EventBus() eventbus.EventBus {
+	return ft.eventBus
 }
 
-func (flt *fleet) Hooks() Hooks {
-	return flt.hooks
+func (ft *fleet) Hooks() Hooks {
+	return ft.hooks
 }
 
 func newHyper(o option.Option) Fleet {
 	o.EnsureDefaults()
-	flt := &fleet{
+	ft := &fleet{
 		o:    o,
 		runG: &run.Group{},
 		hooks: &hooks{
@@ -190,9 +190,9 @@ func newHyper(o option.Option) Fleet {
 		},
 		eventBus: eventbus.New(),
 	}
-	flt.ctx, flt.cancelCtx = context.WithCancel(context.Background())
-	if err := flt.Init(); err != nil {
+	ft.ctx, ft.cancelCtx = context.WithCancel(context.Background())
+	if err := ft.Init(); err != nil {
 		log.Fatal(err)
 	}
-	return flt
+	return ft
 }

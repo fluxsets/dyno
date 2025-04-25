@@ -23,23 +23,23 @@ func main() {
 	opt := option.FromFlags()
 	opt.Name = "http-example"
 	opt.Version = "v0.0.1"
-	app := fleet.New(opt, func(ctx context.Context, flt fleet.Fleet) error {
+	app := fleet.New(opt, func(ctx context.Context, ft fleet.Fleet) error {
 		config := &Config{}
-		if err := flt.Config().Unmarshal(config); err != nil {
+		if err := ft.Config().Unmarshal(config); err != nil {
 			return err
 		}
-		//flt.EventBus().Init(fleet.EventBusOption{ExternalTopics: config.PubSub})
-		opt := flt.Option()
-		logger := flt.Logger()
+		//ft.EventBus().Init(fleet.EventBusOption{ExternalTopics: config.PubSub})
+		opt := ft.Option()
+		logger := ft.Logger()
 		logger.Info("parsed option", "option", opt)
 		logger.Info("parsed config", "config", config)
 
 		var healthChecks []health.Checker
-		flt.Hooks().OnStart(func(ctx context.Context) error {
-			flt.Logger().Info("on start")
+		ft.Hooks().OnStart(func(ctx context.Context) error {
+			ft.Logger().Info("on start")
 			return nil
 		})
-		if deployments, err := flt.DeployFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
+		if deployments, err := ft.DeployFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
 			logger.Info("recv event", "message", string(msg.Body))
 			return nil
 		}), fleet.DeploymentOptions{Instances: 1}); err != nil {
@@ -49,21 +49,21 @@ func main() {
 				healthChecks = append(healthChecks, dep)
 			}
 		}
-		flt.Hooks().OnStop(func(ctx context.Context) error {
-			flt.Logger().Info("on stop")
+		ft.Hooks().OnStop(func(ctx context.Context) error {
+			ft.Logger().Info("on stop")
 			return nil
 		})
 		router := http.NewRouter()
 		router.HandleFunc("/", func(rw gohttp.ResponseWriter, r *gohttp.Request) {
 			_, _ = rw.Write([]byte("hello"))
 		})
-		if err := flt.Deploy(http.NewServer(":9090", router.ServeHTTP, healthChecks, flt.Logger("logger", "http-requestlog"))); err != nil {
+		if err := ft.Deploy(http.NewServer(":9090", router.ServeHTTP, healthChecks, ft.Logger("logger", "http-requestlog"))); err != nil {
 			return err
 		}
 
-		flt.Hooks().OnStart(func(ctx context.Context) error {
+		ft.Hooks().OnStart(func(ctx context.Context) error {
 			time.Sleep(1 * time.Second)
-			topic, err := flt.EventBus().Topic("hello")
+			topic, err := ft.EventBus().Topic("hello")
 			if err != nil {
 				return err
 			}
@@ -71,7 +71,7 @@ func main() {
 				Body: []byte("hello"),
 				Metadata: map[string]string{
 					eventbus.KeyName: "hello",
-					"from":           flt.Option().ID,
+					"from":           ft.Option().ID,
 				},
 			}); err != nil {
 				logger.Info("failed to send message", "error", err)

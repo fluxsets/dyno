@@ -21,25 +21,25 @@ func main() {
 	opt := option.FromFlags()
 	opt.Name = "cli-example"
 	opt.Version = "v0.0.1"
-	app := fleet.New(opt, func(ctx context.Context, flt fleet.Fleet) error {
+	app := fleet.New(opt, func(ctx context.Context, ft fleet.Fleet) error {
 		config := &Config{}
-		if err := flt.Config().Unmarshal(config); err != nil {
+		if err := ft.Config().Unmarshal(config); err != nil {
 			return err
 		}
-		flt.EventBus().Init(eventbus.Option{ExternalTopics: config.PubSub})
+		ft.EventBus().Init(eventbus.Option{ExternalTopics: config.PubSub})
 
-		opt := flt.Option()
-		logger := flt.Logger()
+		opt := ft.Option()
+		logger := ft.Logger()
 		logger.Info("parsed option", "option", opt.String())
 		logger.Info("parsed config", "config", config)
 
-		flt.Hooks().OnStart(func(ctx context.Context) error {
-			flt.Logger().Info("on start")
+		ft.Hooks().OnStart(func(ctx context.Context) error {
+			ft.Logger().Info("on start")
 			return nil
 		})
 
 		var healthChecks []health.Checker
-		if deployments, err := flt.DeployFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
+		if deployments, err := ft.DeployFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
 			logger.Info("recv event", "message", string(msg.Body))
 			return nil
 		}), fleet.DeploymentOptions{Instances: 1}); err != nil {
@@ -50,13 +50,13 @@ func main() {
 			}
 		}
 
-		flt.Hooks().OnStop(func(ctx context.Context) error {
-			flt.Logger().Info("on stop")
+		ft.Hooks().OnStop(func(ctx context.Context) error {
+			ft.Logger().Info("on stop")
 			return nil
 		})
 
-		if err := flt.DeployCommand(func(ctx context.Context) error {
-			topic, err := flt.EventBus().Topic("hello")
+		if err := ft.DeployCommand(func(ctx context.Context) error {
+			topic, err := ft.EventBus().Topic("hello")
 			if err != nil {
 				return err
 			}
