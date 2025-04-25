@@ -28,6 +28,5 @@ func NewLogger(ft fleet.Fleet, logLevel string) *slog.Logger {
 	slog.SetLogLoggerLevel(level)
 	logger := slog.New(slogzap.Option{Level: level, Logger: zapLogger}.NewZapHandler())
 	logger = logger.With("version", ft.Option().Version, "service_name", ft.Option().Name, "service_id", ft.Option().ID)
-	slog.SetDefault(logger)
 	return logger
 }

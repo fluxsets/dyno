@@ -44,6 +44,7 @@ type fleet struct {
 }
 
 func (ft *fleet) SetLogger(logger *slog.Logger) {
+	slog.SetDefault(logger)
 	ft.logger = logger
 }
 
