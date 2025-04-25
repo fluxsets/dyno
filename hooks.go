@@ -6,6 +6,8 @@ type Hooks interface {
 	OnStart(fns ...HookFunc)
 	OnStop(fns ...HookFunc)
 }
+type OnStartHooks []HookFunc
+type OnStopHooks []HookFunc
 
 type HookFunc func(ctx context.Context) error
 
