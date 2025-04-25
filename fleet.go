@@ -83,16 +83,21 @@ func (ft *fleet) initLogger() {
 func (ft *fleet) initConfigurer() {
 	configDir := ft.o.ConfigDir
 	config := ft.o.Config
+	configType := "yaml"
+	if ft.o.ConfigType != "" {
+		configType = ft.o.ConfigType
+	}
 	if configDir != "" {
+
 		configDirs := strings.Split(configDir, ",")
-		ft.c = newConfigFromDir(configDirs, "yaml")
+		ft.c = newConfigFromDir(configDirs, configType)
 	} else if config != "" {
 		ft.c = newConfigFromFile(config)
 	} else {
-		ft.c = newConfigFromDir([]string{"./configs"}, "yaml")
+		ft.c = newConfigFromDir([]string{"./configs"}, configType)
 	}
 
-	ft.c.Merge(ft.o.KWArgsAsMap())
+	ft.c.Merge(ft.o.PropertiesAsMap())
 }
 
 func (ft *fleet) ComponentFromProducer(producer ComponentProducer, options ProduceOption) ([]Component, error) {

@@ -12,11 +12,11 @@ import (
 
 type Option struct {
 	ID              string        `json:"id" flag:"id;;Server ID"`
-	ConfigDir       string        `json:"config_dir" flag:"conf;./configs;config path, eg:--config_dir ./configs"`
-	ConfigType      string        `json:"config_type" flag:"config_type;config file type, eg:--config_type yaml"`
+	ConfigDir       string        `json:"config_dir" flag:"config-dir;;config path, eg:--config-dir ./configs"`
+	ConfigType      string        `json:"config_type" flag:"config-type;yaml;config file type, eg:--config-type yaml"`
 	Config          string        `json:"config" flag:"config;config file, eg: --config ./configs/config.yaml"`
-	LogLevel        string        `json:"loglevel" flag:"loglevel;debug;default log level"`
-	KWArgs          string        `json:"kwargs" flag:"kwargs;;extern args, eg: --kwargs a=1,b=2"`
+	LogLevel        string        `json:"log_level" flag:"log-level;debug;default log level, eg:--log-level debug"`
+	Properties      string        `json:"properties" flag:"properties;;extern args, eg: --properties a=1,b=2"`
 	Version         string        `json:"version"`
 	Name            string        `json:"name"`
 	ShutdownTimeout time.Duration `json:"shutdown_timeout"`
@@ -34,9 +34,9 @@ func (o *Option) EnsureDefaults() {
 	o.ShutdownTimeout = 5 * time.Second
 }
 
-func (o *Option) KWArgsAsMap() map[string]any {
-	kwargs := map[string]any{}
-	args := strings.Split(o.KWArgs, ",")
+func (o *Option) PropertiesAsMap() map[string]any {
+	properties := map[string]any{}
+	args := strings.Split(o.Properties, ",")
 	for _, s := range args {
 		kv := strings.Split(s, "=")
 		if len(kv) != 2 {
@@ -44,9 +44,9 @@ func (o *Option) KWArgsAsMap() map[string]any {
 		}
 		key := strings.TrimSpace(kv[0])
 		value := strings.TrimSpace(kv[1])
-		kwargs[key] = value
+		properties[key] = value
 	}
-	return kwargs
+	return properties
 }
 
 func FromFlags() Option {
