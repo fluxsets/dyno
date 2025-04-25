@@ -17,7 +17,7 @@ func New(o option.Option, setup SetupFunc) *App {
 	if o.ID == "" {
 		o.ID, _ = os.Hostname()
 	}
-	ft := newHyper(o)
+	ft := newFleet(o)
 	return &App{
 		setup: setup,
 		fleet: ft,

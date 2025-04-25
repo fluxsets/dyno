@@ -18,8 +18,8 @@ import (
 type Fleet interface {
 	Init() error
 	Close()
-	Config() Config
-	Option() option.Option
+	C() Configurer
+	O() *option.Option
 	Context() context.Context
 	ComponentFromProducer(producer ComponentProducer, options ProduceOption) ([]Component, error)
 	Component(components ...Component) error
@@ -38,7 +38,7 @@ type fleet struct {
 	eventBus  eventbus.EventBus
 	hooks     *hooks
 	logger    *slog.Logger
-	c         Config
+	c         Configurer
 }
 
 func (ft *fleet) Command(cmd CommandFunc) error {
@@ -50,7 +50,7 @@ func (ft *fleet) Close() {
 }
 
 func (ft *fleet) Init() error {
-	ft.initConfig()
+	ft.initConfigurer()
 	ft.initLogger()
 	ft.hooks.OnStop(func(ctx context.Context) error {
 		return ft.EventBus().Close(ctx)
@@ -80,10 +80,18 @@ func (ft *fleet) initLogger() {
 	ft.logger = logger
 }
 
-func (ft *fleet) initConfig() {
-	configPaths := strings.Split(ft.o.Conf, ",")
+func (ft *fleet) initConfigurer() {
+	configDir := ft.o.ConfigDir
+	config := ft.o.Config
+	if configDir != "" {
+		configDirs := strings.Split(configDir, ",")
+		ft.c = newConfigFromDir(configDirs, "yaml")
+	} else if config != "" {
+		ft.c = newConfigFromFile(config)
+	} else {
+		ft.c = newConfigFromDir([]string{"./configs"}, "yaml")
+	}
 
-	ft.c = newConfig(configPaths, []string{"yaml"})
 	ft.c.Merge(ft.o.KWArgsAsMap())
 }
 
@@ -97,7 +105,7 @@ func (ft *fleet) ComponentFromProducer(producer ComponentProducer, options Produ
 	return components, ft.Component(components...)
 }
 
-func (ft *fleet) Config() Config {
+func (ft *fleet) C() Configurer {
 	return ft.c
 }
 
@@ -109,8 +117,8 @@ func (ft *fleet) Context() context.Context {
 	return ft.ctx
 }
 
-func (ft *fleet) Option() option.Option {
-	return ft.o
+func (ft *fleet) O() *option.Option {
+	return &ft.o
 }
 
 func (ft *fleet) Component(components ...Component) error {
@@ -179,7 +187,7 @@ func (ft *fleet) Hooks() Hooks {
 	return ft.hooks
 }
 
-func newHyper(o option.Option) Fleet {
+func newFleet(o option.Option) Fleet {
 	o.EnsureDefaults()
 	ft := &fleet{
 		o:    o,

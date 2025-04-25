@@ -12,7 +12,9 @@ import (
 
 type Option struct {
 	ID              string        `json:"id" flag:"id;;Server ID"`
-	Conf            string        `json:"conf" flag:"conf;./configs;config path, eg:--conf ./configs"`
+	ConfigDir       string        `json:"config_dir" flag:"conf;./configs;config path, eg:--config_dir ./configs"`
+	ConfigType      string        `json:"config_type" flag:"config_type;config file type, eg:--config_type yaml"`
+	Config          string        `json:"config" flag:"config;config file, eg: --config ./configs/config.yaml"`
 	LogLevel        string        `json:"loglevel" flag:"loglevel;debug;default log level"`
 	KWArgs          string        `json:"kwargs" flag:"kwargs;;extern args, eg: --kwargs a=1,b=2"`
 	Version         string        `json:"version"`

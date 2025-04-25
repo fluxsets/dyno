@@ -25,11 +25,11 @@ func main() {
 	opt.Version = "v0.0.1"
 	app := fleet.New(opt, func(ctx context.Context, ft fleet.Fleet) error {
 		config := &Config{}
-		if err := ft.Config().Unmarshal(config); err != nil {
+		if err := ft.C().Unmarshal(config); err != nil {
 			return err
 		}
 		//ft.EventBus().Init(fleet.EventBusOption{ExternalTopics: config.PubSub})
-		opt := ft.Option()
+		opt := ft.O()
 		logger := ft.Logger()
 		logger.Info("parsed option", "option", opt)
 		logger.Info("parsed config", "config", config)
@@ -71,7 +71,7 @@ func main() {
 				Body: []byte("hello"),
 				Metadata: map[string]string{
 					eventbus.KeyName: "hello",
-					"from":           ft.Option().ID,
+					"from":           ft.O().ID,
 				},
 			}); err != nil {
 				logger.Info("failed to send message", "error", err)

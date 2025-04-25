@@ -6,21 +6,21 @@ import (
 	"log"
 )
 
-type Config interface {
-	ConfigGetter
-	ConfigUnmarshaler
-	Sub(key string) Config
+type Configurer interface {
+	ConfigureGetter
+	ConfigureUnmarshaler
+	Sub(key string) Configurer
 	Merge(data map[string]interface{})
 }
 
-type ConfigGetter interface {
+type ConfigureGetter interface {
 	Get(key string) any
 	GetInt(key string) int
 	GetBool(key string) bool
 	GetString(key string) string
 }
 
-type ConfigUnmarshaler interface {
+type ConfigureUnmarshaler interface {
 	Unmarshal(v any) error
 }
 
@@ -56,20 +56,31 @@ func (vc *viperConfig) Unmarshal(v any) error {
 	})
 }
 
-func (vc *viperConfig) Sub(key string) Config {
+func (vc *viperConfig) Sub(key string) Configurer {
 	sub := vc.v.Sub(key)
 	return &viperConfig{
 		v: sub,
 	}
 }
 
-var _ Config = new(viperConfig)
+var _ Configurer = new(viperConfig)
 
-func newConfig(paths []string, exts []string) Config {
+func newConfigFromFile(file string) Configurer {
 	v := viper.New()
-	for _, ext := range exts {
-		v.SetConfigType(ext)
+	v.SetConfigFile(file)
+
+	if err := v.ReadInConfig(); err != nil {
+		log.Fatal(err)
 	}
+	return &viperConfig{
+		v: v,
+	}
+}
+
+func newConfigFromDir(paths []string, fileType string) Configurer {
+	v := viper.New()
+	v.SetConfigType(fileType)
+
 	for _, path := range paths {
 		v.AddConfigPath(path)
 	}

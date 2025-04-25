@@ -23,12 +23,12 @@ func main() {
 	opt.Version = "v0.0.1"
 	app := fleet.New(opt, func(ctx context.Context, ft fleet.Fleet) error {
 		config := &Config{}
-		if err := ft.Config().Unmarshal(config); err != nil {
+		if err := ft.C().Unmarshal(config); err != nil {
 			return err
 		}
 		ft.EventBus().Init(eventbus.Option{ExternalTopics: config.PubSub})
 
-		opt := ft.Option()
+		opt := ft.O()
 		logger := ft.Logger()
 		logger.Info("parsed option", "option", opt.String())
 		logger.Info("parsed config", "config", config)
