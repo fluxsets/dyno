@@ -45,10 +45,32 @@ func NewSubscriber(topic TopicURI, h HandlerFunc) *Subscriber {
 	}
 }
 
-func NewSubscriberProducer(topic TopicURI, h HandlerFunc) fleet.ComponentProducer {
-	return func() fleet.Component {
-		return NewSubscriber(topic, h)
+func NewSubscriberProducer(topic TopicURI, h HandlerFunc, instances int) fleet.ComponentProducer {
+	return &Producer{
+		instance: instances,
+		h:        h,
+		topic:    topic,
 	}
+}
+
+type Producer struct {
+	instance int
+	h        HandlerFunc
+	topic    TopicURI
+}
+
+func (p *Producer) ComponentFunc() fleet.Component {
+	return NewSubscriber(p.topic, p.h)
+}
+
+func (p *Producer) Option() fleet.ProduceOption {
+	return fleet.ProduceOption{
+		Instances: p.instance,
+	}
+}
+
+func NewProducer(topic TopicURI) fleet.ComponentProducer {
+	return &Producer{}
 }
 
 func (s *Subscriber) Name() string {

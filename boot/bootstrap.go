@@ -6,16 +6,23 @@ import (
 )
 
 type Bootstrap struct {
-	StartHooks []fleet.HookFunc
-	StopHooks  []fleet.HookFunc
-	Components []fleet.Component
+	StartHooks         []fleet.HookFunc
+	StopHooks          []fleet.HookFunc
+	Components         []fleet.Component
+	ComponentProducers []fleet.ComponentProducer
 }
 
-func NewBootstrap() *Bootstrap {
+func NewBootstrap(
+	onStars fleet.OnStartHooks,
+	onStops fleet.OnStopHooks,
+	components []fleet.Component,
+	componentProducers []fleet.ComponentProducer,
+) *Bootstrap {
 	return &Bootstrap{
-		StartHooks: []fleet.HookFunc{},
-		StopHooks:  []fleet.HookFunc{},
-		Components: []fleet.Component{},
+		StartHooks:         onStars,
+		StopHooks:          onStops,
+		Components:         components,
+		ComponentProducers: componentProducers,
 	}
 }
 

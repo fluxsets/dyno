@@ -21,7 +21,7 @@ type Fleet interface {
 	C() Configurer
 	O() *option.Option
 	Context() context.Context
-	ComponentFromProducer(producer ComponentProducer, options ProduceOption) ([]Component, error)
+	ComponentFromProducer(producer ComponentProducer) ([]Component, error)
 	Component(components ...Component) error
 	Command(cmd CommandFunc) error
 	Run() error
@@ -100,12 +100,14 @@ func (ft *fleet) initConfigurer() {
 	ft.c.Merge(ft.o.PropertiesAsMap())
 }
 
-func (ft *fleet) ComponentFromProducer(producer ComponentProducer, options ProduceOption) ([]Component, error) {
+func (ft *fleet) ComponentFromProducer(producer ComponentProducer) ([]Component, error) {
+	newFn := producer.ComponentFunc
+	options := producer.Option()
 	options.ensureDefaults()
 	var components []Component
 	for i := 0; i < options.Instances; i++ {
-		dep := producer()
-		components = append(components, dep)
+		comp := newFn()
+		components = append(components, comp)
 	}
 	return components, ft.Component(components...)
 }

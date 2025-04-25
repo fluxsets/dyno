@@ -13,6 +13,11 @@ type Component interface {
 	Stop(ctx context.Context)
 }
 
+type ComponentProducer interface {
+	ComponentFunc() Component
+	Option() ProduceOption
+}
+
 type ProduceOption struct {
 	Instances int `json:"instances"` // 实例数
 }
@@ -22,8 +27,6 @@ func (o *ProduceOption) ensureDefaults() {
 		o.Instances = 1
 	}
 }
-
-type ComponentProducer func() Component
 
 type ComponentSet []Component
 

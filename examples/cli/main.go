@@ -42,7 +42,7 @@ func main() {
 		if components, err := ft.ComponentFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
 			logger.Info("recv event", "message", string(msg.Body))
 			return nil
-		}), fleet.ProduceOption{Instances: 1}); err != nil {
+		}, 1)); err != nil {
 			return err
 		} else {
 			for _, component := range components {
