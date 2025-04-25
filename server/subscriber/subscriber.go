@@ -35,7 +35,7 @@ type Subscriber struct {
 	handler HandlerFunc
 	subs    *pubsub.Subscription
 	logger  *slog.Logger
-	fleet.HealthCheck
+	fleet.HealthChecker
 }
 
 func NewSubscriber(topic TopicURI, h HandlerFunc) *Subscriber {
@@ -59,7 +59,7 @@ type Producer struct {
 	topic    TopicURI
 }
 
-func (p *Producer) ComponentFunc() fleet.Component {
+func (p *Producer) Component() fleet.Component {
 	return NewSubscriber(p.topic, p.h)
 }
 

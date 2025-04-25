@@ -5,8 +5,6 @@ import (
 	"github.com/fluxsets/fleet/eventbus"
 	"github.com/fluxsets/fleet/option"
 	"github.com/oklog/run"
-	slogzap "github.com/samber/slog-zap/v2"
-	"go.uber.org/zap"
 	"gocloud.dev/server/health"
 	"log"
 	"log/slog"
@@ -19,39 +17,44 @@ import (
 type Fleet interface {
 	Init() error
 	Close()
-	C() Configurer
-	O() *option.Option
+	Configurer() Configurer
+	Option() *option.Option
 	Context() context.Context
-	ComponentFromProducer(producer ComponentProducer) ([]Component, error)
-	Component(components ...Component) error
-	Command(cmd CommandFunc) error
-	HealthCheck() HealthCheckerRetriever
+	Mount(components ...Component) error
+	MountCommand(cmd CommandFunc) error
+	MountFromProducer(producers ...ComponentProducer) error
+	HealthCheck() HealthCheck
 	Run() error
 	EventBus() eventbus.EventBus
 	Hooks() Hooks
+	SetLogger(logger *slog.Logger)
 	Logger(args ...any) *slog.Logger
 }
 
 type fleet struct {
-	ctx          context.Context
-	cancelCtx    context.CancelFunc
-	o            option.Option
-	runG         *run.Group
-	eventBus     eventbus.EventBus
-	hooks        *hooks
-	logger       *slog.Logger
-	c            Configurer
-	healthChecks []health.Checker
+	ctx            context.Context
+	cancelCtx      context.CancelFunc
+	o              option.Option
+	runG           *run.Group
+	eventBus       eventbus.EventBus
+	hooks          *hooks
+	logger         *slog.Logger
+	c              Configurer
+	healthCheckers []health.Checker
 }
 
-func (ft *fleet) HealthCheck() HealthCheckerRetriever {
+func (ft *fleet) SetLogger(logger *slog.Logger) {
+	ft.logger = logger
+}
+
+func (ft *fleet) HealthCheck() HealthCheck {
 	return func() []health.Checker {
-		return ft.healthChecks
+		return ft.healthCheckers
 	}
 }
 
-func (ft *fleet) Command(cmd CommandFunc) error {
-	return ft.Component(NewCommand(cmd))
+func (ft *fleet) MountCommand(cmd CommandFunc) error {
+	return ft.Mount(NewCommand(cmd))
 }
 
 func (ft *fleet) Close() {
@@ -68,25 +71,7 @@ func (ft *fleet) Init() error {
 }
 
 func (ft *fleet) initLogger() {
-	level := slog.LevelDebug
-	atomicLevel := zap.NewAtomicLevel()
-
-	zapLevel := zap.DebugLevel
-	if ft.o.LogLevel != "" {
-		_ = level.UnmarshalText([]byte(ft.o.LogLevel))
-		_ = zapLevel.UnmarshalText([]byte(ft.o.LogLevel))
-	}
-	atomicLevel.SetLevel(zapLevel)
-
-	zapConfig := zap.NewProductionConfig()
-	zapConfig.Level = atomicLevel
-	//zapConfig.EncoderConfig.EncodeTime= zap.En
-	zapLogger, _ := zapConfig.Build()
-	slog.SetLogLoggerLevel(level)
-	logger := slog.New(slogzap.Option{Level: level, Logger: zapLogger}.NewZapHandler())
-	logger = logger.With("version", ft.o.Version, "service_name", ft.o.Name, "service_id", ft.o.ID)
-	slog.SetDefault(logger)
-	ft.logger = logger
+	ft.logger = slog.Default()
 }
 
 func (ft *fleet) initConfigurer() {
@@ -109,19 +94,24 @@ func (ft *fleet) initConfigurer() {
 	ft.c.Merge(ft.o.PropertiesAsMap())
 }
 
-func (ft *fleet) ComponentFromProducer(producer ComponentProducer) ([]Component, error) {
-	newFn := producer.ComponentFunc
-	options := producer.Option()
-	options.ensureDefaults()
-	var components []Component
-	for i := 0; i < options.Instances; i++ {
-		comp := newFn()
-		components = append(components, comp)
+func (ft *fleet) MountFromProducer(producers ...ComponentProducer) error {
+	for _, producer := range producers {
+		produce := producer.Component
+		options := producer.Option()
+		options.ensureDefaults()
+		var components []Component
+		for i := 0; i < options.Instances; i++ {
+			comp := produce()
+			components = append(components, comp)
+		}
+		if err := ft.Mount(components...); err != nil {
+			return err
+		}
 	}
-	return components, ft.Component(components...)
+	return nil
 }
 
-func (ft *fleet) C() Configurer {
+func (ft *fleet) Configurer() Configurer {
 	return ft.c
 }
 
@@ -133,11 +123,11 @@ func (ft *fleet) Context() context.Context {
 	return ft.ctx
 }
 
-func (ft *fleet) O() *option.Option {
+func (ft *fleet) Option() *option.Option {
 	return &ft.o
 }
 
-func (ft *fleet) Component(components ...Component) error {
+func (ft *fleet) Mount(components ...Component) error {
 	for _, comp := range components {
 		ctx, cancel := context.WithCancel(context.Background())
 		if err := comp.Init(ft); err != nil {
@@ -151,7 +141,7 @@ func (ft *fleet) Component(components ...Component) error {
 			cancel()
 		})
 		if hc, ok := comp.(health.Checker); ok {
-			ft.healthChecks = append(ft.healthChecks, hc)
+			ft.healthCheckers = append(ft.healthCheckers, hc)
 		}
 	}
 	return nil

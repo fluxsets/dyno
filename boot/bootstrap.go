@@ -2,7 +2,6 @@ package boot
 
 import (
 	"github.com/fluxsets/fleet"
-	"log"
 )
 
 type Bootstrap struct {
@@ -26,10 +25,15 @@ func NewBootstrap(
 	}
 }
 
-func (b *Bootstrap) Wire(fl fleet.Fleet) {
+func (b *Bootstrap) Bind(fl fleet.Fleet) error {
 	fl.Hooks().OnStart(b.StopHooks...)
 	fl.Hooks().OnStop(b.StopHooks...)
-	if err := fl.Component(b.Components...); err != nil {
-		log.Fatal(err)
+	if err := fl.Mount(b.Components...); err != nil {
+		return err
 	}
+
+	if err := fl.MountFromProducer(b.ComponentProducers...); err != nil {
+		return err
+	}
+	return nil
 }

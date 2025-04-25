@@ -8,11 +8,9 @@ require (
 	github.com/AdamSLevy/flagbind v0.0.0-20241102175934-70a5d83327aa
 	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/oklog/run v1.1.0
-	github.com/samber/slog-zap/v2 v2.6.2
 	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.20.1
 	go.uber.org/multierr v1.11.0
-	go.uber.org/zap v1.27.0
 	gocloud.dev v0.41.0
 	gocloud.dev/pubsub/kafkapubsub v0.41.0
 )
@@ -41,8 +39,6 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
-	github.com/samber/lo v1.47.0 // indirect
-	github.com/samber/slog-common v0.18.1 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.12.0 // indirect
 	github.com/spf13/cast v1.7.1 // indirect

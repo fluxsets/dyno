@@ -24,11 +24,11 @@ func main() {
 	opt.Version = "v0.0.1"
 	app := fleet.New(opt, func(ctx context.Context, ft fleet.Fleet) error {
 		config := &Config{}
-		if err := ft.C().Unmarshal(config); err != nil {
+		if err := ft.Configurer().Unmarshal(config); err != nil {
 			return err
 		}
 		//ft.EventBus().Init(fleet.EventBusOption{ExternalTopics: config.PubSub})
-		opt := ft.O()
+		opt := ft.Option()
 		logger := ft.Logger()
 		logger.Info("parsed option", "option", opt)
 		logger.Info("parsed config", "config", config)
@@ -37,7 +37,7 @@ func main() {
 			ft.Logger().Info("on start")
 			return nil
 		})
-		if _, err := ft.ComponentFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
+		if err := ft.MountFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
 			logger.Info("recv event", "message", string(msg.Body))
 			return nil
 		}, 1)); err != nil {
@@ -52,7 +52,7 @@ func main() {
 			_, _ = rw.Write([]byte("hello"))
 		})
 
-		if err := ft.Component(http.NewServer(":9090", router, ft.HealthCheck(), ft.Logger("logger", "http-requestlog"))); err != nil {
+		if err := ft.Mount(http.NewServer(":9090", router, ft.HealthChecker(), ft.Logger("logger", "http-requestlog"))); err != nil {
 			return err
 		}
 
@@ -66,7 +66,7 @@ func main() {
 				Body: []byte("hello"),
 				Metadata: map[string]string{
 					eventbus.KeyName: "hello",
-					"from":           ft.O().ID,
+					"from":           ft.Option().ID,
 				},
 			}); err != nil {
 				logger.Info("failed to send message", "error", err)

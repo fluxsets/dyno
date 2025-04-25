@@ -13,7 +13,7 @@ type Component interface {
 }
 
 type ComponentProducer interface {
-	ComponentFunc() Component
+	Component() Component
 	Option() ProduceOption
 }
 
@@ -34,4 +34,4 @@ type ServerLike interface {
 	Component
 }
 
-type HealthCheckerRetriever func() []health.Checker
+type HealthCheck func() []health.Checker
