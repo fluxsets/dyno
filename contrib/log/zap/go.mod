@@ -2,9 +2,14 @@ module github.com/fluxsets/fleet/contrib/log/zap
 
 go 1.24.2
 
-replace (
-	github.com/fluxsets/fleet => ../../../
+replace github.com/fluxsets/fleet => ../../../
+
+require (
+	github.com/fluxsets/fleet v0.0.8
+	github.com/samber/slog-zap/v2 v2.6.2
+	go.uber.org/zap v1.27.0
 )
+
 require (
 	github.com/AdamSLevy/flagbind v0.0.0-20241102175934-70a5d83327aa // indirect
 	github.com/IBM/sarama v1.45.1 // indirect
@@ -12,7 +17,6 @@ require (
 	github.com/eapache/go-resiliency v1.7.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
-	github.com/fluxsets/fleet v0.0.8-0.20250425155925-9f4896b7eb24 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
@@ -34,7 +38,6 @@ require (
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
 	github.com/samber/lo v1.47.0 // indirect
 	github.com/samber/slog-common v0.18.1 // indirect
-	github.com/samber/slog-zap/v2 v2.6.2 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.12.0 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
@@ -43,7 +46,6 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.uber.org/zap v1.27.0 // indirect
 	gocloud.dev v0.41.0 // indirect
 	gocloud.dev/pubsub/kafkapubsub v0.41.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
