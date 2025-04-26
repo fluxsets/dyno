@@ -3,19 +3,15 @@ package main
 import (
 	"context"
 	"github.com/fluxsets/fleet"
-	"github.com/fluxsets/fleet/eventbus"
 	"github.com/fluxsets/fleet/option"
 	"github.com/fluxsets/fleet/server/http"
-	"github.com/fluxsets/fleet/server/subscriber"
-	"gocloud.dev/pubsub"
 	"log"
 	gohttp "net/http"
 	"time"
 )
 
 type Config struct {
-	Addr   string                          `json:"addr"`
-	PubSub map[string]eventbus.TopicOption `json:"pubsub"`
+	Addr string `json:"addr"`
 }
 
 func main() {
@@ -37,12 +33,7 @@ func main() {
 			ft.Logger().Info("on start")
 			return nil
 		})
-		if err := ft.DeployFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
-			logger.Info("recv event", "message", string(msg.Body))
-			return nil
-		}, 1)); err != nil {
-			return err
-		}
+
 		ft.Hooks().OnStop(func(ctx context.Context) error {
 			ft.Logger().Info("on stop")
 			return nil
@@ -58,19 +49,6 @@ func main() {
 
 		ft.Hooks().OnStart(func(ctx context.Context) error {
 			time.Sleep(1 * time.Second)
-			topic, err := ft.EventBus().Topic("hello")
-			if err != nil {
-				return err
-			}
-			if err := topic.Send(ctx, &pubsub.Message{
-				Body: []byte("hello"),
-				Metadata: map[string]string{
-					eventbus.KeyName: "hello",
-					"from":           ft.Option().ID,
-				},
-			}); err != nil {
-				logger.Info("failed to send message", "error", err)
-			}
 			return nil
 		})
 
