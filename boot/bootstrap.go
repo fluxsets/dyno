@@ -28,11 +28,11 @@ func NewBootstrap(
 func (b *Bootstrap) Bind(fl fleet.Fleet) error {
 	fl.Hooks().OnStart(b.StopHooks...)
 	fl.Hooks().OnStop(b.StopHooks...)
-	if err := fl.Mount(b.Components...); err != nil {
+	if err := fl.Deploy(b.Components...); err != nil {
 		return err
 	}
 
-	if err := fl.MountFromProducer(b.ComponentProducers...); err != nil {
+	if err := fl.DeployFromProducer(b.ComponentProducers...); err != nil {
 		return err
 	}
 	return nil

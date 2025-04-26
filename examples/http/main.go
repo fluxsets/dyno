@@ -37,7 +37,7 @@ func main() {
 			ft.Logger().Info("on start")
 			return nil
 		})
-		if err := ft.MountFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
+		if err := ft.DeployFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
 			logger.Info("recv event", "message", string(msg.Body))
 			return nil
 		}, 1)); err != nil {
@@ -52,7 +52,7 @@ func main() {
 			_, _ = rw.Write([]byte("hello"))
 		})
 
-		if err := ft.Mount(http.NewServer(":9090", router, ft.HealthCheck(), ft.Logger("logger", "http-requestlog"))); err != nil {
+		if err := ft.Deploy(http.NewServer(":9090", router, ft.HealthCheck(), ft.Logger("logger", "http-requestlog"))); err != nil {
 			return err
 		}
 

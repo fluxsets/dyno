@@ -34,4 +34,4 @@ type ServerLike interface {
 	Component
 }
 
-type HealthCheck func() []health.Checker
+type HealthCheckFunc func() []health.Checker

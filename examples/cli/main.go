@@ -37,7 +37,7 @@ func main() {
 			return nil
 		})
 
-		if err := ft.MountFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
+		if err := ft.DeployFromProducer(subscriber.NewSubscriberProducer("hello", func(ctx context.Context, msg *pubsub.Message) error {
 			logger.Info("recv event", "message", string(msg.Body))
 			return nil
 		}, 1)); err != nil {
@@ -49,7 +49,7 @@ func main() {
 			return nil
 		})
 
-		if err := ft.MountCommand(func(ctx context.Context) error {
+		if err := ft.Command(func(ctx context.Context) error {
 			topic, err := ft.EventBus().Topic("hello")
 			if err != nil {
 				return err

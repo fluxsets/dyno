@@ -20,10 +20,10 @@ type Fleet interface {
 	Configurer() Configurer
 	Option() *option.Option
 	Context() context.Context
-	Mount(components ...Component) error
-	MountCommand(cmd CommandFunc) error
-	MountFromProducer(producers ...ComponentProducer) error
-	HealthCheck() HealthCheck
+	Command(cmd CommandFunc) error
+	Deploy(components ...Component) error
+	DeployFromProducer(producers ...ComponentProducer) error
+	HealthCheck() HealthCheckFunc
 	Run() error
 	EventBus() eventbus.EventBus
 	Hooks() Hooks
@@ -48,14 +48,14 @@ func (ft *fleet) SetLogger(logger *slog.Logger) {
 	ft.logger = logger
 }
 
-func (ft *fleet) HealthCheck() HealthCheck {
+func (ft *fleet) HealthCheck() HealthCheckFunc {
 	return func() []health.Checker {
 		return ft.healthCheckers
 	}
 }
 
-func (ft *fleet) MountCommand(cmd CommandFunc) error {
-	return ft.Mount(NewCommand(cmd))
+func (ft *fleet) Command(cmd CommandFunc) error {
+	return ft.Deploy(NewCommand(cmd))
 }
 
 func (ft *fleet) Close() {
@@ -95,7 +95,7 @@ func (ft *fleet) initConfigurer() {
 	ft.c.Merge(ft.o.PropertiesAsMap())
 }
 
-func (ft *fleet) MountFromProducer(producers ...ComponentProducer) error {
+func (ft *fleet) DeployFromProducer(producers ...ComponentProducer) error {
 	for _, producer := range producers {
 		produce := producer.Component
 		options := producer.Option()
@@ -105,7 +105,7 @@ func (ft *fleet) MountFromProducer(producers ...ComponentProducer) error {
 			comp := produce()
 			components = append(components, comp)
 		}
-		if err := ft.Mount(components...); err != nil {
+		if err := ft.Deploy(components...); err != nil {
 			return err
 		}
 	}
@@ -128,7 +128,7 @@ func (ft *fleet) Option() *option.Option {
 	return &ft.o
 }
 
-func (ft *fleet) Mount(components ...Component) error {
+func (ft *fleet) Deploy(components ...Component) error {
 	for _, comp := range components {
 		ctx, cancel := context.WithCancel(context.Background())
 		if err := comp.Init(ft); err != nil {
