@@ -20,7 +20,7 @@ func main() {
 	opt.Version = "v0.0.1"
 	app := fleet.New(opt, func(ctx context.Context, ft fleet.Fleet) error {
 		config := &Config{}
-		if err := ft.Configurer().Unmarshal(config); err != nil {
+		if err := ft.Config().Unmarshal(config); err != nil {
 			return err
 		}
 		//ft.EventBus().Init(fleet.EventBusOption{ExternalTopics: config.PubSub})
@@ -43,7 +43,7 @@ func main() {
 			_, _ = rw.Write([]byte("hello"))
 		})
 
-		if err := ft.Deploy(http.NewServer(":9090", router, ft.HealthCheck(), ft.Logger("logger", "http-requestlog"))); err != nil {
+		if err := ft.Load(http.NewServer(":9090", router, ft.HealthCheck(), ft.Logger("logger", "http-requestlog"))); err != nil {
 			return err
 		}
 

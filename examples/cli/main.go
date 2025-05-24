@@ -18,7 +18,7 @@ func main() {
 	op.Version = "v0.0.1"
 	app := fleet.New(op, func(ctx context.Context, ft fleet.Fleet) error {
 		config := &Config{}
-		if err := ft.Configurer().Unmarshal(config); err != nil {
+		if err := ft.Config().Unmarshal(config); err != nil {
 			return err
 		}
 
@@ -37,7 +37,7 @@ func main() {
 			return nil
 		})
 
-		if err := ft.Command(func(ctx context.Context) error {
+		if err := ft.MainCommand(func(ctx context.Context) error {
 			logger.Info("command executed successfully")
 			time.Sleep(1 * time.Second)
 			return nil

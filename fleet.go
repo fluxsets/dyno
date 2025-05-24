@@ -16,12 +16,14 @@ import (
 type Fleet interface {
 	Init() error
 	Close()
-	Configurer() Configurer
+	Config() Configurer
 	Option() *option.Option
 	Context() context.Context
-	Command(cmd CommandFunc) error
-	Deploy(components ...Component) error
-	DeployFromProducer(producers ...ComponentProducer) error
+	// MainCommand 注册启动的命令，用于 CLI 模式
+	MainCommand(cmd CommandFunc) error
+	// Load 加载组件，但只有当应用启动后才会执行 Start
+	Load(components ...Component) error
+	LoadFromProducer(producers ...ComponentProducer) error
 	HealthCheck() HealthCheckFunc
 	Run() error
 	Hooks() Hooks
@@ -51,8 +53,8 @@ func (ft *fleet) HealthCheck() HealthCheckFunc {
 	}
 }
 
-func (ft *fleet) Command(cmd CommandFunc) error {
-	return ft.Deploy(NewCommand(cmd))
+func (ft *fleet) MainCommand(cmd CommandFunc) error {
+	return ft.Load(NewCommand(cmd))
 }
 
 func (ft *fleet) Close() {
@@ -89,7 +91,7 @@ func (ft *fleet) initConfigurer() {
 	ft.c.Merge(ft.o.PropertiesAsMap())
 }
 
-func (ft *fleet) DeployFromProducer(producers ...ComponentProducer) error {
+func (ft *fleet) LoadFromProducer(producers ...ComponentProducer) error {
 	for _, producer := range producers {
 		produce := producer.Component
 		options := producer.Option()
@@ -99,14 +101,14 @@ func (ft *fleet) DeployFromProducer(producers ...ComponentProducer) error {
 			comp := produce()
 			components = append(components, comp)
 		}
-		if err := ft.Deploy(components...); err != nil {
+		if err := ft.Load(components...); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (ft *fleet) Configurer() Configurer {
+func (ft *fleet) Config() Configurer {
 	return ft.c
 }
 
@@ -122,7 +124,7 @@ func (ft *fleet) Option() *option.Option {
 	return &ft.o
 }
 
-func (ft *fleet) Deploy(components ...Component) error {
+func (ft *fleet) Load(components ...Component) error {
 	for _, comp := range components {
 		ctx, cancel := context.WithCancel(context.Background())
 		if err := comp.Init(ft); err != nil {
