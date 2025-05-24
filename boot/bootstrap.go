@@ -26,7 +26,7 @@ func NewBootstrap(
 }
 
 func (b *Bootstrap) Bind(fl fleet.Fleet) error {
-	fl.Hooks().OnStart(b.StopHooks...)
+	fl.Hooks().OnStart(b.StartHooks...)
 	fl.Hooks().OnStop(b.StopHooks...)
 	if err := fl.Load(b.Components...); err != nil {
 		return err
